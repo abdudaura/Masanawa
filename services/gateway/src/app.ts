@@ -85,6 +85,12 @@ import {
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
 import { registerCallHistoryRoutes } from "./call_history/routes.js";
+import { registerStatusRuntime, type StatusRuntime } from "./modules/home_feed/runtime.js";
+import { registerRoomsRoutes, type RoomsRoutePorts } from "./modules/rooms/routes.js";
+import { registerRoomDiscussionRoutes, type DiscussionRoutePorts } from "./modules/rooms/discussion_routes.js";
+import { registerRoomBookmarkRoutes, type RoomBookmarkPorts } from "./modules/rooms/bookmark_routes.js";
+import { registerRoomMembershipRoutes, type RoomMembershipRoutePorts } from "./modules/rooms/membership_routes.js";
+import { registerMasanaInboxRoutes, type MasanaInboxRoutesDeps } from "./modules/masana_chat/inbox_routes.js";
 import type { CallHistoryService } from "./call_history/service.js";
 
 export interface ReadinessCheck {
@@ -93,6 +99,15 @@ export interface ReadinessCheck {
 }
 
 export interface GatewayAppOptions {
+  /** Canonical session/PG-backed social modules; default-off pending qualification. */
+  readonly status?: StatusRuntime;
+  readonly masanaInbox?: MasanaInboxRoutesDeps;
+  readonly rooms?: Readonly<{
+    routes: RoomsRoutePorts;
+    discussion: DiscussionRoutePorts;
+    bookmarks: RoomBookmarkPorts;
+    membership: RoomMembershipRoutePorts;
+  }>;
   readonly callHistory?: CallHistoryService;
   readonly groupCalls?: GroupCallService;
   readonly incomingCalls?: IncomingCallService;
@@ -1503,6 +1518,17 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
+  // Additive composition: never replace Calls, financial or existing agent routes.
+  const status = options.status;
+  if (status) app.register(async (scope) => { await registerStatusRuntime(scope, status); });
+  if (options.masanaInbox) registerMasanaInboxRoutes(app, options.masanaInbox);
+  const rooms = options.rooms;
+  if (rooms) {
+    registerRoomsRoutes(app, rooms.routes);
+    registerRoomDiscussionRoutes(app, rooms.discussion);
+    registerRoomBookmarkRoutes(app, rooms.bookmarks);
+    registerRoomMembershipRoutes(app, rooms.membership);
+  }
   if (options.callHistory) registerCallHistoryRoutes(app, options.callHistory);
   if (options.groupCalls) registerGroupCallRoutes(app, options.groupCalls);
   if (options.incomingCalls) registerIncomingCallRoutes(app, options.incomingCalls);

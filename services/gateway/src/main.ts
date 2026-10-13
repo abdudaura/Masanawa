@@ -1,4 +1,12 @@
 import { createIncomingCallService, type IncomingRepository, type IncomingCallService } from "./incoming_calls/service.js";
+import { FeedService, EditorialReviewService } from "@masanawa/feed";
+import { RoomError } from "@masanawa/rooms";
+import {
+  PgHomeFeedRepository, PgEditorialReviewRepository, PgStatusEligibility,
+  createPgRoomsRepository, createPgRoomDiscussionRepository,
+  createPgRoomBookmarkStore, createPgRoomMembershipRepository,
+  createMasanaInboxRepository,
+} from "@masanawa/postgres";
 import { createPostgresIncomingCallRepository } from "./incoming_calls/postgres_repository.js";
 import { createIncomingServerAuthorizer } from "./incoming_calls/server_authorizer.js";
 import { pathToFileURL } from "node:url";
@@ -235,6 +243,7 @@ import {
   createHttpSmsOtpDelivery,
   createPlatformCustomerAuthorizers,
   createPlatformCustomerSessionAuthorizer,
+  CustomerAuthError,
   createPlatformSessionFinancialAuthorizer,
   createResendOtpDelivery,
   type CustomerAuthService,
@@ -296,6 +305,8 @@ export interface ServiceProcess extends NodeSignalSource {
 }
 
 export interface ServiceDatabaseDependency {
+  /** Shared canonical Pool, never a per-feature PostgreSQL authority. */
+  readonly featurePool?: Parameters<typeof createPgRoomsRepository>[0];
   readonly callHistory?: CallHistoryRepository & CallHistoryRecorder;
   readonly groupCalls?: GroupCallRepository;
   readonly incomingCalls?: IncomingRepository;
@@ -423,6 +434,7 @@ function createDefaultDatabaseDependency(
   const groupCalls = createPostgresGroupCallRepository(database.pool);
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    featurePool: database.pool,
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
     platformAgentIdentity: Object.freeze({
@@ -2245,8 +2257,78 @@ export async function startGatewayService(
             ...(pushSender ? { pushSender } : {}),
           })
         : undefined);
+  // AF00 single owner: current authenticated customer sessions + PostgreSQL.
+  // Never infer user/tenant/editor role from client input; no extra server.
+  const featureOptions: Partial<GatewayAppOptions> = (() => {
+    const pool = database.featurePool;
+    const sessions = billingCustomerAuthorizer;
+    const tenantId = platformTenantId;
+    if (!pool || !sessions || !tenantId) return {};
+    const resolve = async (authorizationHeader: string | undefined) => {
+      const identity = await sessions.authorize({ authorizationHeader });
+      if (identity.tenantId !== tenantId) throw new CustomerAuthError("FORBIDDEN", 403);
+      return identity;
+    };
+    const authorizeRoom = async (
+      header: string | undefined,
+      _capability: "rooms.read" | "rooms.join" | "rooms.ask" | "rooms.staff",
+    ) => {
+      try {
+        const identity = await resolve(header);
+        // Empty staff roles intentionally fence unqualified admin privileges.
+        return { tenantId: identity.tenantId, userId: identity.userId, roles: [] };
+      } catch (error) {
+        if (error instanceof CustomerAuthError) throw new RoomError(error.statusCode, error.code);
+        throw new RoomError(503, "rooms_auth_unavailable");
+      }
+    };
+    const eligibility = new PgStatusEligibility(pool);
+    const approved = (tenant: string, character: string) => eligibility.author(tenant, character);
+    const statusEnabled = () => env.MASANAWA_STATUS_BACKEND_ENABLED === "true";
+    const roomsEnabled = () => env.MASANAWA_ROOMS_BACKEND_ENABLED === "true";
+    const chatsEnabled = () => env.MASANAWA_CHATS_INBOX_ENABLED === "true";
+    const status = {
+      sessions: { authorize: (input: { authorizationHeader: string | undefined }) =>
+        resolve(input.authorizationHeader) },
+      feed: new FeedService(new PgHomeFeedRepository(pool), approved),
+      editorial: new EditorialReviewService(
+        new PgEditorialReviewRepository(pool), approved, async () => false,
+      ),
+      // Real editorial roles/media signing require separate authorization.
+      isEditor: async () => false,
+      enabled: statusEnabled,
+    };
+    const rooms = {
+      routes: {
+        repository: createPgRoomsRepository(pool), authorize: authorizeRoom,
+        isApprovedMasana: approved, enabled: roomsEnabled,
+      },
+      discussion: {
+        store: createPgRoomDiscussionRepository(pool),
+        authorize: authorizeRoom, enabled: roomsEnabled,
+      },
+      bookmarks: {
+        store: createPgRoomBookmarkStore(pool),
+        authorize: authorizeRoom, enabled: roomsEnabled,
+      },
+      membership: {
+        repository: createPgRoomMembershipRepository(pool),
+        authorize: authorizeRoom, enabled: () => false,
+      },
+    };
+    const masanaInbox = {
+      resolveFan: async (authorizationHeader: string | undefined) => {
+        const identity = await resolve(authorizationHeader);
+        return { tenantId: identity.tenantId, fanUserId: identity.userId };
+      },
+      inbox: createMasanaInboxRepository(pool, { hiddenTurnsReady: false }),
+      enabled: chatsEnabled,
+    };
+    return { status, rooms, masanaInbox };
+  })();
     app = appFactory({
       ...(options.appOptions ?? {}),
+      ...featureOptions,
       ...(customerAuth ? { customerAuth } : {}),
       ...(accountDeletion ? { accountDeletion } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),

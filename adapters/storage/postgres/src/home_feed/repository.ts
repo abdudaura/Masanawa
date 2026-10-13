@@ -8,7 +8,7 @@ function item(r:Row){
   publishedAt:new Date(String(r.published_at)).toISOString(),likeCount:Number(r.like_count??0),commentCount:Number(r.comment_count??0),
   viewerLiked:Boolean(r.viewer_liked),viewerSaved:Boolean(r.viewer_saved)};
 }
-function comment(r:Row){return {id:String(r.id),postId:String(r.post_id),body:String(r.body),state:String(r.state),
+function comment(r:Row){return {id:String(r.id),postId:String(r.post_id),body:String(r.body),state:String(r.state) as "pending"|"visible",
  createdAt:new Date(String(r.created_at)).toISOString(),parentId:r.parent_comment_id==null?null:String(r.parent_comment_id)};}
 // Approval alone survives character deactivation/ownership transfer. Recheck
 // the canonical identity on every fan-facing read and insert.
