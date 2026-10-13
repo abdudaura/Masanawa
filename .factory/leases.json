@@ -2059,27 +2059,6 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
-    },
-    {
-      "claim_id": "af10-rooms-teacher-runtime-20261013-gpt6",
-      "owner": "AF10 / GPT-6 connected Room queue worker",
-      "scope": "Bounded flagged Rooms teacher question worker with PG queue, service lifecycle, no unverified AI spending",
-      "branch": "lane/af10-rooms-teacher-runtime-20261013-gpt6",
-      "base_sha": "204ed142fc8bb90b02c7c62b49e5c4b9020f7e34",
-      "paths": [
-        "adapters/storage/postgres/src/index.ts",
-        "services/worker/src/main.ts",
-        "services/worker/src/jobs/rooms/runtime.ts",
-        "services/worker/src/jobs/rooms/runtime.test.ts",
-        "services/worker/src/jobs/rooms/teacher.ts",
-        "services/worker/src/jobs/rooms/teacher.test.ts",
-        "docs/workstreams/AF10-rooms-teacher-worker-20261013.md",
-        ".github/workflows/status-video-integration.yml"
-      ],
-      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/716",
-      "claimed_at": "2026-10-13T13:44:15.192Z",
-      "heartbeat_at": "2026-10-13T13:51:30.493Z",
-      "expires_at": "2026-10-13T13:56:30.493Z"
     }
   ],
   "history": [
@@ -6622,6 +6601,32 @@
       "released_at": "2026-10-13T13:25:13.052Z",
       "release_reason": "PR #715 exact source cec24fb3863c7f8877149f6075c1fd34568d6c70 merged main 204ed142fc8bb90b02c7c62b49e5c4b9020f7e34; hosted 79 Vitest+7 real PG18, 54 Flutter PASS and focused Dart clean; global 75 inherited Gateway TS, unrelated Foundation TalkId and mobile whole analyzer remain fail; no qualified fiat/custody/treasury migration/device/provider or activation.",
       "integration_head_sha": "204ed142fc8bb90b02c7c62b49e5c4b9020f7e34"
+    },
+    {
+      "claim_id": "af10-rooms-teacher-runtime-20261013-gpt6",
+      "owner": "AF10 / GPT-6 connected Room queue worker",
+      "scope": "Bounded flagged Rooms teacher question worker with PG queue, service lifecycle, no unverified AI spending",
+      "branch": "lane/af10-rooms-teacher-runtime-20261013-gpt6",
+      "base_sha": "204ed142fc8bb90b02c7c62b49e5c4b9020f7e34",
+      "paths": [
+        "adapters/storage/postgres/src/index.ts",
+        "services/worker/src/main.ts",
+        "services/worker/src/jobs/rooms/runtime.ts",
+        "services/worker/src/jobs/rooms/runtime.test.ts",
+        "services/worker/src/jobs/rooms/teacher.ts",
+        "services/worker/src/jobs/rooms/teacher.test.ts",
+        "docs/workstreams/AF10-rooms-teacher-worker-20261013.md",
+        ".github/workflows/status-video-integration.yml"
+      ],
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/716",
+      "claimed_at": "2026-10-13T13:44:15.192Z",
+      "heartbeat_at": "2026-10-13T13:51:30.493Z",
+      "expires_at": "2026-10-13T13:56:30.493Z",
+      "released_at": "2026-10-13T13:53:00.807Z",
+      "release_reason": "PR #716 source 78f255d11baf146bccf8583c4971f3c4bfca78ba merged to main d547dcdccf3ec448c65ee8dd995ca29e91d1d3e2; hosted run 38407960243 91 Vitest/PG18 and Worker TypeScript PASS; old Gateway/Foundation typecheck FAIL; review-only flags OFF, provider/device not qualified.",
+      "source_head": "c88fdcd4ba3144ae0d0a877b21b84abc6f69350b",
+      "integration_head_sha": "d547dcdccf3ec448c65ee8dd995ca29e91d1d3e2",
+      "source_pr": 716
     }
   ],
   "schema_version": 1
