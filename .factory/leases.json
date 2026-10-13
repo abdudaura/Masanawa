@@ -1926,30 +1926,6 @@
       "released_at": "2026-10-13T15:35:41.555Z"
     },
     {
-      "claim_id": "af10-rooms-membership-connected-20261013-gpt6",
-      "owner": "AF10/GPT-6 Rooms invitation lifecycle",
-      "branch": "lane/af10-rooms-membership-connected-20261013-gpt6",
-      "scope": "Canonical Rooms schema + Gateway default-OFF membership activation + account-fenced Flutter invite/moderation integration and focused tests",
-      "base_sha": "8cc8086738cc682cbad84433c99ffcb69fee72b3",
-      "paths": [
-        "services/gateway/src/main.ts",
-        "packages/rooms/migrations/0006_membership_invites.sql",
-        "adapters/storage/postgres/src/rooms/membership.integration.test.mjs",
-        "apps/mobile/lib/src/features/rooms/room_membership_client.dart",
-        "apps/mobile/lib/src/features/rooms/room_membership_screen.dart",
-        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
-        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
-        "apps/mobile/test/features/rooms/room_membership_screen_test.dart",
-        "apps/mobile/test/features/rooms/room_membership_client_test.dart",
-        ".github/workflows/rooms-production-build.yml",
-        "docs/workstreams/AF10-room-membership-lifecycle-20261013.md"
-      ],
-      "claimed_at": "2026-10-13T16:06:00Z",
-      "heartbeat_at": "2026-10-13T16:06:00Z",
-      "expires_at": "2026-10-13T16:35:00Z",
-      "notes": "AF07 #723 merged and its active claim does not overlap these paths. AF00 protected Gateway composition narrow transfer with stale overlapping files reviewed above; preserve existing account/money/worker."
-    },
-    {
       "claim_id": "af07-masana-rooms-lessons-apk-20261013-gpt6",
       "owner": "AF07/GPT-6 26 Room lesson starter content and real Android APK compilation",
       "scope": "Publish actual curated starter lessons for all 26 Masana free Rooms idempotently and test PG18 answer-ready content; independent Android compilation and APK artifact despite unrelated full analyzer debt",
@@ -6927,6 +6903,32 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af10-rooms-membership-connected-20261013-gpt6",
+      "owner": "AF10/GPT-6 Rooms invitation lifecycle",
+      "branch": "lane/af10-rooms-membership-connected-20261013-gpt6",
+      "scope": "Canonical Rooms schema + Gateway default-OFF membership activation + account-fenced Flutter invite/moderation integration and focused tests",
+      "base_sha": "8cc8086738cc682cbad84433c99ffcb69fee72b3",
+      "paths": [
+        "services/gateway/src/main.ts",
+        "packages/rooms/migrations/0006_membership_invites.sql",
+        "adapters/storage/postgres/src/rooms/membership.integration.test.mjs",
+        "apps/mobile/lib/src/features/rooms/room_membership_client.dart",
+        "apps/mobile/lib/src/features/rooms/room_membership_screen.dart",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/room_membership_screen_test.dart",
+        "apps/mobile/test/features/rooms/room_membership_client_test.dart",
+        ".github/workflows/rooms-production-build.yml",
+        "docs/workstreams/AF10-room-membership-lifecycle-20261013.md"
+      ],
+      "claimed_at": "2026-10-13T16:06:00Z",
+      "heartbeat_at": "2026-10-13T16:06:00Z",
+      "expires_at": "2026-10-13T16:35:00Z",
+      "notes": "AF07 #723 merged and its active claim does not overlap these paths. AF00 protected Gateway composition narrow transfer with stale overlapping files reviewed above; preserve existing account/money/worker.",
+      "released_at": "2026-10-13T16:23:00Z",
+      "release_reason": "Integrated tested source in PR #724; source head 92550385a3af0e1a5cbf2d11c748f8676aa35ee7; main merge a86b93142abe97c1701b318b74fad77254b06bef. Scoped Rooms workflow 38429513121 PASS: 56 Vitest, 4 PG18 forward/worker tests, 20 Node auth/unit, 5 real PG18 invite/tenant/race tests, 18 Flutter tests, Gateway/Worker production builds and Worker TS, focused Dart. Source only: production Rooms membership flag OFF, real gateway/DB/devices/backup not qualified; baseline full Foundation TS, whole Flutter analysis and Gateway strict fail separately."
     }
   ],
   "schema_version": 1
