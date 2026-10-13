@@ -8,7 +8,7 @@ import '../api/account_deletion_models.dart';
 /// users never configure runtime URLs or credentials inside the app.
 const String kApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://masanawa-gateway-production.up.railway.app',
+  defaultValue: 'https://masanawa-gateway-production-338f.up.railway.app',
 );
 
 /// Thrown for contract-level / transport failures with a message safe to show.
