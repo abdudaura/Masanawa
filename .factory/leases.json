@@ -2020,6 +2020,38 @@
       "source_head": "4fcda058e4f65ead1c8b55c27d0b55897ce79401",
       "source_pr": 712,
       "integration_head_sha": "8d5a0492b65ebe702087dfe61457b562ea201760"
+    },
+    {
+      "base_sha": "8d5a0492b65ebe702087dfe61457b562ea201760",
+      "branch": "lane/af01-msn-qualified-balance-20261013-gpt6",
+      "claim_id": "af01-msn-qualified-balance-20261013-gpt6",
+      "claimed_at": "2026-10-13T11:02:50.285Z",
+      "heartbeat_at": "2026-10-13T11:02:50.285Z",
+      "expires_at": "2026-10-13T11:12:50.285Z",
+      "notes": "New AF01 read-only qualified MSN balance and backed-issuance source continuation, reuse individual files from diverged draft #576; separate off-chain MSN from legacy Credits; no provider execution, no user supplied proof, both runtime/client flags default OFF; main and root scope claimed exclusively after PR #712 merge.",
+      "owner": "GPT-6 / AF01 MSN qualified readback",
+      "paths": [
+        "packages/commerce/migrations/0112_msn_wallet.sql",
+        "services/gateway/src/msn_wallet/admission.ts",
+        "services/gateway/src/msn_wallet/admission.test.ts",
+        "services/gateway/src/msn_wallet/store.ts",
+        "services/gateway/src/msn_wallet/store.test.ts",
+        "services/gateway/src/msn_wallet/routes.ts",
+        "services/gateway/src/msn_wallet/routes.test.ts",
+        "services/gateway/src/msn_wallet/msn_postgres.integration.test.ts",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "apps/mobile/lib/src/finance/msn_balance_transport.dart",
+        "apps/mobile/lib/src/finance/msn_balance_card.dart",
+        "apps/mobile/lib/src/finance/msn_wallet_panel.dart",
+        "apps/mobile/test/finance/msn_balance_transport_test.dart",
+        "apps/mobile/test/finance/msn_balance_card_test.dart",
+        "apps/mobile/test/finance/msn_wallet_panel_test.dart",
+        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
+        ".github/workflows/af01-msn-qualified-balance.yml",
+        "docs/workstreams/AF01-msn-qualified-balance-20261013.md"
+      ],
+      "scope": "Add MSN issuance invariant source/migration, trusted authenticated Gateway readback and opt-in Flutter UI with real PostgreSQL tests. Explicitly leave NGN funding/provider workers/crypto issuance/transfer disabled until proof."
     }
   ],
   "history": [
