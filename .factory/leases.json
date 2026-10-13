@@ -1955,9 +1955,11 @@
         ".github/workflows/communication-regression.yml"
       ],
       "claimed_at": "2026-10-13T16:22:45.144Z",
-      "heartbeat_at": "2026-10-13T16:22:45.144Z",
-      "expires_at": "2026-10-13T16:27:45.144Z",
-      "notes": "Latest main and claim registry checked; preserve all existing calls and chat transport."
+      "heartbeat_at": "2026-10-13T16:27:15.949Z",
+      "expires_at": "2026-10-13T16:32:15.949Z",
+      "notes": "Latest main and claim registry checked; preserve all existing calls and chat transport.",
+      "source_pr": 726,
+      "source_head": "a163742d18b5e7a96927399a779363a6d46fb9cb"
     }
   ],
   "history": [
