@@ -127,6 +127,7 @@ export function createAgentDirectoryService(input: {
             profileByCharacter.get(presentation.characterId) ?? null;
           const currentActivity =
             activityByCharacter.get(presentation.characterId) ?? null;
+          const roomId=rooms.get(presentation.characterId);
           const defaultPlatformAgent =
             profile?.supportAgent === true &&
             (preference
@@ -147,8 +148,7 @@ export function createAgentDirectoryService(input: {
             defaultPlatformAgent,
             voiceProvider: profile?.voiceProvider ?? null,
             voiceName: profile?.voiceName ?? null,
-            ...(rooms.has(presentation.characterId)
-              ? {roomId:rooms.get(presentation.characterId)} : {}),
+            ...(roomId ? {roomId} : {}),
           });
         }),
       );
