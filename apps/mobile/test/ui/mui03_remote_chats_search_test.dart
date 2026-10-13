@@ -42,6 +42,7 @@ class TestSession extends SessionController {
 class TestDirectory extends AgentDirectoryController {
   @override
   AgentDirectoryState build() => const AgentDirectoryState(
+    loading: false,
     agents: [
       AgentDirectoryEntry(
         characterId: 'character_00000000-0000-0000-0000-000000000001',

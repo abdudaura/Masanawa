@@ -640,7 +640,6 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
       _serverLoading = false;
       return;
     }
-    _serverLoading = true;
     _debounce = Timer(const Duration(milliseconds: 350), () {
       unawaited(_fetchRemote(generation, account, token, query));
     });
@@ -648,6 +647,8 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
 
   Future<void> _fetchRemote(
       int generation, String account, String token, String query) async {
+    if (!_current(generation, account, token, query)) return;
+    setState(() => _serverLoading = true);
     try {
       final items = await widget.inbox.search(bearer: token, query: query);
       if (!_current(generation, account, token, query)) return;
@@ -685,6 +686,7 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
       _query = query;
       _remote = const [];
       _serverError = null;
+      _serverLoading = false;
       _queueRemote();
     });
   }
