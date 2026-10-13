@@ -93,7 +93,7 @@ export function createPgTeacherQueue(pool:Pool):TeacherQueue {
            (outbox_event_id,tenant_id,event_id,event_type,schema_version,
             aggregate_type,aggregate_id,correlation_id,destination,payload)
            VALUES($1,$2,$3,'rooms.answer.approved',1,'room_question',$4,$5,
-             'notifications.rooms',jsonb_build_object('userId',$6,'roomId',$7,'questionId',$4))`,
+             'notifications.rooms',jsonb_build_object('userId',$6::text,'roomId',$7::text,'questionId',$4::text))`,
            ["outbox-event_"+randomUUID(),job.tenantId,"event_"+randomUUID(),
             job.questionId,"correlation_"+randomUUID(),source.user_id,job.roomId]);
        }

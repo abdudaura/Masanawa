@@ -134,7 +134,7 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
      const eid=newId("event_"),correlation=newId("correlation_");
      await q.query(`INSERT INTO events.outbox
        (outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload)
-       VALUES ($1,$2,$3,'rooms.question.queued',1,'room_question',$4,$5,'rooms.teacher',jsonb_build_object('roomId',$6,'questionId',$4))`,
+       VALUES ($1,$2,$3,'rooms.question.queued',1,'room_question',$4,$5,'rooms.teacher',jsonb_build_object('roomId',$6::text,'questionId',$4::text))`,
        [newId("outbox-event_"),a.tenantId,eid,questionId,correlation,id]);
      return {questionId,roomId:id,body,state:"queued" as const,queuedAt:new Date().toISOString(),answer:null};
    });

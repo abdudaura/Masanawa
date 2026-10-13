@@ -105,9 +105,53 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
  final question=TextEditingController();
  RoomInfo? info;List<RoomQuestion> items=[];List<RoomLesson> lessons=[];
  bool loading=true,busy=false,paidAccessBlocked=false;Object? error;int tab=0;String? pendingKey;
+ Timer? _answerPoll;
+ int _viewVersion=0,_pollFailures=0;
+ bool _polling=false;
  @override void initState(){super.initState();load();}
- @override void dispose(){question.dispose();super.dispose();}
+ @override void didUpdateWidget(covariant RoomHomeScreen oldWidget){
+  super.didUpdateWidget(oldWidget);
+  if(oldWidget.client!=widget.client||oldWidget.id!=widget.id){
+   _answerPoll?.cancel();
+   ++_viewVersion;
+   items=[];info=null;lessons=[];paidAccessBlocked=false;pendingKey=null;
+   load();
+  }
+ }
+ @override void dispose(){_answerPoll?.cancel();++_viewVersion;question.dispose();super.dispose();}
+ bool get _hasPendingAnswers=>info?.joined==true&&!paidAccessBlocked&&
+     items.any((item)=>item.answer==null);
+ void _scheduleAnswers(){
+  _answerPoll?.cancel();
+  if(!mounted||!_hasPendingAnswers||loading||busy)return;
+  final delay=Duration(seconds:_pollFailures==0?3:_pollFailures==1?8:20);
+  _answerPoll=Timer(delay,_refreshAnswers);
+ }
+ Future<void> _refreshAnswers()async{
+  if(!mounted||loading||busy||!_hasPendingAnswers)return;
+  if(_polling){_scheduleAnswers();return;}
+  final version=_viewVersion,roomId=widget.id,client=widget.client;
+  _polling=true;
+  try{
+   final next=await client.questions(roomId);
+   if(!mounted||version!=_viewVersion||roomId!=widget.id||!identical(client,widget.client))return;
+   _pollFailures=0;
+   setState(()=>items=next);
+  }on DioException catch(error){
+   if(!mounted||version!=_viewVersion)return;
+   if(error.response?.statusCode==401||error.response?.statusCode==403){
+    setState(()=>paidAccessBlocked=true);
+   }else{_pollFailures=(_pollFailures+1).clamp(0,2);}
+  }catch(_){
+   if(mounted&&version==_viewVersion)_pollFailures=(_pollFailures+1).clamp(0,2);
+  }finally{
+   _polling=false;
+   if(mounted&&version==_viewVersion)_scheduleAnswers();
+  }
+ }
  Future<void> load()async{
+  _answerPoll?.cancel();
+  final version=++_viewVersion;
   setState((){loading=true;error=null;});
   try{final room=await widget.client.room(widget.id);
    List<RoomQuestion> qs=[];
@@ -124,10 +168,14 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
      else{rethrow;}
     }
    }
-   if(mounted)setState((){
-    info=room;items=qs;lessons=ls;paidAccessBlocked=subscriptionBlocked;loading=false;
-   });
-  }catch(e){if(mounted)setState((){error=e;loading=false;});}
+   if(mounted&&version==_viewVersion){
+    _pollFailures=0;
+    setState((){
+     info=room;items=qs;lessons=ls;paidAccessBlocked=subscriptionBlocked;loading=false;
+    });
+    _scheduleAnswers();
+   }
+  }catch(e){if(mounted&&version==_viewVersion)setState((){error=e;loading=false;});}
  }
  Future<void> membership()async{
   if(info==null||busy)return;setState(()=>busy=true);
@@ -164,7 +212,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
   try{await widget.client.ask(widget.id,question.text.trim(),pendingKey!);
    pendingKey=null;question.clear();await load();
   }catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(roomError(e))));}
-  finally{if(mounted)setState(()=>busy=false);}
+  finally{if(mounted){setState(()=>busy=false);_scheduleAnswers();}}
  }
  @override Widget build(BuildContext context)=>Scaffold(
   appBar:AppBar(title:Text(info?.title??'Room'),backgroundColor:Colors.white,foregroundColor:Colors.black87,
