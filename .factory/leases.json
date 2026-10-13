@@ -1984,6 +1984,25 @@
       "claimed_at": "2026-10-13T16:50:53.607Z",
       "heartbeat_at": "2026-10-13T16:50:53.607Z",
       "expires_at": "2026-10-13T17:35:53.607Z"
+    },
+    {
+      "claim_id": "af01-msn-settlement-integrity-20261013-gpt6",
+      "owner": "AF01 / GPT-6 settlement integration continuation",
+      "scope": "Bind MSN issuance to immutable exact quote, independent canonical fiat verification and debit, reconcile NGN debit and ledger under staged disabled financial contract",
+      "paths": [
+        "services/gateway/src/msn_wallet/store.ts",
+        "services/gateway/src/msn_wallet/store.test.ts",
+        "services/gateway/src/msn_wallet/reconciliation.ts",
+        "services/gateway/src/msn_wallet/reconciliation.test.ts",
+        "adapters/storage/postgres/src/commerce/msn-reconciliation.integration.test.ts",
+        "docs/workstreams/AF01-msn-settlement-finance-reconciliation-20261013.md"
+      ],
+      "base_sha": "6ed4af48fe4ea2fc53c8447dc83434c9c86d25e3",
+      "branch": "lane/af01-msn-settlement-integrity-20261013-gpt6",
+      "claimed_at": "2026-10-13T16:54:57.355Z",
+      "heartbeat_at": "2026-10-13T16:54:57.355Z",
+      "expires_at": "2026-10-13T16:59:57.355Z",
+      "notes": "No production migration activation, provider writes, backend deployment or AF00 shared composition edits. Preserve historical claims and unrelated source."
     }
   ],
   "history": [
