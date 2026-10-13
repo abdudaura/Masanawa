@@ -9,7 +9,8 @@ import {
   type NodeSignalSource,
   type ServiceLifecycleLogger,
 } from "@masanawa/node-runtime";
-import { createPostgresServiceDependency } from "@masanawa/postgres";
+import { createPostgresServiceDependency, createPgTeacherQueue, type Pool } from "@masanawa/postgres";
+import { createRoomTeacherReviewRuntime } from "./jobs/rooms/runtime.js";
 import {
   createWorkerApp,
   type WorkerAppOptions,
@@ -25,6 +26,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
+  readonly pool?: Pool;
   close(): Promise<void>;
 }
 
@@ -96,9 +98,25 @@ export async function startWorkerService(
     options.databaseFactory ?? createDefaultDatabaseDependency;
   const database = databaseFactory(env);
   const appFactory = options.appFactory ?? createWorkerApp;
+  // Explicitly opt-in to review-only Room queue draining. This never calls an
+  // AI or paid provider, auto-publishes an answer, or grants an entitlement.
+  const roomReviewEnabled =
+    env.MASANAWA_ROOMS_TEACHER_REVIEW_ONLY_ENABLED === "true";
+  let roomReview: ReturnType<typeof createRoomTeacherReviewRuntime> | undefined;
 
   let app: ManagedNodeServer;
   try {
+    if (roomReviewEnabled) {
+      if (env.MASANAWA_ROOMS_BACKEND_ENABLED !== "true") {
+        throw new Error("rooms_teacher_requires_rooms_backend");
+      }
+      if (!database.pool) throw new Error("rooms_teacher_postgres_pool_required");
+      roomReview = createRoomTeacherReviewRuntime({
+        queue: createPgTeacherQueue(database.pool),
+        workerId: env.MASANAWA_ROOMS_TEACHER_WORKER_ID ?? "rooms-review-" + process.pid,
+        enabled: () => !drain.isDraining(),
+      });
+    }
     app = appFactory({
       ...(options.appOptions ?? {}),
       readinessChecks: [
@@ -112,18 +130,31 @@ export async function startWorkerService(
     throw error;
   }
 
-  const lifecycle = await startNodeService({
-    serviceName: "worker",
-    server: app,
-    config,
-    signals: processRef,
-    ...(options.logger ? { logger: options.logger } : {}),
-    onDraining: drain.beginDraining,
-    onAfterClose: database.close,
-    onFatalShutdown: () => {
-      processRef.exitCode = 1;
-    },
-  });
+  let lifecycle: Awaited<ReturnType<typeof startNodeService>>;
+  try {
+    lifecycle = await startNodeService({
+      serviceName: "worker",
+      server: app,
+      config,
+      signals: processRef,
+      ...(options.logger ? { logger: options.logger } : {}),
+      onDraining: drain.beginDraining,
+      // Cancel the timer and await the current fenced outbox job before the
+      // shared PostgreSQL pool shuts down; do not abandon in-flight claims.
+      onAfterClose: async () => {
+        await roomReview?.stop();
+        await database.close();
+      },
+      onFatalShutdown: () => {
+        processRef.exitCode = 1;
+      },
+    });
+    roomReview?.start();
+  } catch (error) {
+    await roomReview?.stop();
+    await database.close().catch(() => undefined);
+    throw error;
+  }
 
   return Object.freeze({
     config,
