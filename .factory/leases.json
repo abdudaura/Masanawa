@@ -2021,21 +2021,6 @@
       "source_head": "c6a3ee3b149245943bef6f5e1c3554a22d584a01",
       "source_pr": 731,
       "integration_head_sha": "483ec92068e6236137a7a28d709b8760414996cc"
-    },
-    {
-      "claim_id": "af00-worker-startup-failure-diagnosis-20261014-gpt6",
-      "owner": "GPT-6 AF00 Worker recovery",
-      "scope": "Expose redacted allowlisted worker startup reasons to identify Railway failure without leaking Gemini keys; contract test; preserve canonical worker readiness and job safeguards.",
-      "paths": [
-        "services/worker/src/main.ts",
-        "services/worker/src/main.test.ts"
-      ],
-      "claimed_at": "2026-10-13T23:31:34.453Z",
-      "heartbeat_at": "2026-10-13T23:31:34.453Z",
-      "expires_at": "2026-10-14T00:16:34.453Z",
-      "base_sha": "9c9acd84efa327d1257238c68966081e1dd2d890",
-      "branch": "lane/af00-worker-startup-diagnosis-20261014-gpt6",
-      "notes": "Worker latest Gemini env name configured, but runtime exits without error detail. Existing Railway worker logs only pnpm exit; registry checked."
     }
   ],
   "history": [
@@ -7147,6 +7132,26 @@
       "source_head": "6554dfadb67084e5853b027e6547de1d7452127d",
       "integration_head_sha": "9c9acd84efa327d1257238c68966081e1dd2d890",
       "release_reason": "PR #734 merged main with one-path reviewed workflow correction and focused 26-portrait tests passed; full APK release compilation was still in progress at merge (not falsely marked PASS), CI will report separately."
+    },
+    {
+      "claim_id": "af00-worker-startup-failure-diagnosis-20261014-gpt6",
+      "owner": "GPT-6 AF00 Worker recovery",
+      "scope": "Expose redacted allowlisted worker startup reasons to identify Railway failure without leaking Gemini keys; contract test; preserve canonical worker readiness and job safeguards.",
+      "paths": [
+        "services/worker/src/main.ts",
+        "services/worker/src/main.test.ts"
+      ],
+      "claimed_at": "2026-10-13T23:31:34.453Z",
+      "heartbeat_at": "2026-10-13T23:31:34.453Z",
+      "expires_at": "2026-10-14T00:16:34.453Z",
+      "base_sha": "9c9acd84efa327d1257238c68966081e1dd2d890",
+      "branch": "lane/af00-worker-startup-diagnosis-20261014-gpt6",
+      "notes": "Worker latest Gemini env name configured, but runtime exits without error detail. Existing Railway worker logs only pnpm exit; registry checked.",
+      "released_at": "2026-10-13T23:34:08.258Z",
+      "source_head": "f4af0d901afc6dd990aaf5c33db0cd24a2d0670e",
+      "integration_head_sha": "01eb241196019e7be49eb02e9febeebc7dd4a241",
+      "source_pr": 735,
+      "release_reason": "PR #735 merged to main. Rooms Production Build Qualification and Railway Deployment Source Contract passed on exact source SHA; Foundation CI failed unrelated whole-project typecheck. New worker deployment triggered separately; live readiness not yet qualified."
     }
   ],
   "schema_version": 1
