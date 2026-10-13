@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import '../../core/providers.dart';
 import '../../features/home_feed/feed_api.dart';
 import '../../features/home_feed/feed_media_api.dart';
 import '../../features/home_feed/feed_media_screen.dart';
 import '../../features/home_feed/feed_screen.dart';
+import '../../features/videos/video_models.dart';
+import '../../features/videos/video_repository.dart';
+import '../../features/videos/videos_screen.dart';
+import '../../features/videos/official_video_player_screen.dart';
+import '../../core/status_audio_focus.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -106,6 +112,36 @@ final statusFeedApiProvider = Provider<FeedApi>((ref) {
   );
 });
 
+/// The video catalogue uses the *same* ApiClient auth interceptor as Status.
+class AccountBoundVideoRepository extends VideoRepository {
+  AccountBoundVideoRepository(Dio dio, {
+    required this.ownerAccount,
+    required this.currentAccount,
+  }) : super(dio);
+
+  final String ownerAccount;
+  final String? Function() currentAccount;
+
+  Future<T> _checked<T>(Future<T> Function() work) async {
+    if (ownerAccount.isEmpty || currentAccount() != ownerAccount) {
+      throw StateError('account_changed');
+    }
+    final value = await work();
+    if (currentAccount() != ownerAccount) {
+      throw StateError('account_changed');
+    }
+    return value;
+  }
+
+  @override
+  Future<VideoCatalogPage> page({String? provider, String? before}) =>
+      _checked(() => super.page(provider: provider, before: before));
+
+  @override
+  Future<bool> isApproved(String id) =>
+      _checked(() => super.isApproved(id));
+}
+
 /// The Status root is for Masana-authored approved updates only. The former
 /// Talk creation route is not a Status action and is deliberately absent.
 class StatusScreen extends ConsumerWidget {
@@ -132,8 +168,9 @@ class StatusScreen extends ConsumerWidget {
       }
     }
 
-    void openImage(FeedPost post, String mediaId) {
-      if (post.kind != 'image' || currentAccount() != account) return;
+    void openMedia(FeedPost post, String mediaId) {
+      if (!const {'image', 'audio'}.contains(post.kind) ||
+          currentAccount() != account) return;
       final media = AccountBoundFeedMediaApi(
         delegate: DioFeedMediaApi(api.dio, () async => api.accessToken),
         ownerAccount: account,
@@ -148,13 +185,40 @@ class StatusScreen extends ConsumerWidget {
             );
           }
           return FeedMediaScreen(
-            key: ValueKey('status-image-$account-${post.id}-$mediaId'),
+            key: ValueKey('status-${post.kind}-$account-${post.id}-$mediaId'),
             api: media,
             accountKey: account,
             postId: post.id,
             mediaIds: post.mediaIds,
             initialMediaId: mediaId,
-            kind: 'image',
+            kind: post.kind,
+            onBeforeAudio: post.kind == 'audio'
+                ? () => StatusAudioFocus.prepare(
+                    isAccountCurrent: () => currentAccount() == account)
+                : null,
+          );
+        }),
+      ));
+    }
+
+    final videos = AccountBoundVideoRepository(
+      api.dio, ownerAccount: account, currentAccount: currentAccount,
+    );
+
+    void openApprovedVideo(ExternalVideo video) {
+      if (currentAccount() != account) return;
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => Consumer(builder: (context, ref, _) {
+          final active = ref.watch(sessionProvider);
+          if (active is! SessionSignedIn || active.user.id != account) {
+            return const Scaffold(
+              body: Center(child: Text('Sign in to watch videos.')),
+            );
+          }
+          return OfficialVideoPlayerScreen(
+            key: ValueKey('status-video-$account-${video.id}'),
+            video: video,
+            checkAvailability: videos.isApproved,
           );
         }),
       ));
@@ -162,13 +226,32 @@ class StatusScreen extends ConsumerWidget {
 
     return KeyedSubtree(
       key: ValueKey('status-account-$account'),
-      child: MasanaFeedScreen(
-        api: feed,
-        accountKey: account,
-        onOpenMedia: openImage,
-        // No supplied author-public-profile route or signed audio-focus
-        // contract in this shell. Leave those actions unmounted, not guessed.
-        audioPlaybackAvailable: false,
+      child: DefaultTabController(
+        length: 2,
+        child: Column(children: [
+          const TabBar(tabs: [
+            Tab(text: 'Updates', icon: Icon(Icons.article_outlined)),
+            Tab(text: 'Videos', icon: Icon(Icons.ondemand_video_outlined)),
+          ]),
+          Expanded(child: TabBarView(children: [
+            MasanaFeedScreen(
+              api: feed,
+              accountKey: account,
+              onOpenMedia: openMedia,
+              audioPlaybackAvailable: true,
+            ),
+            ExternalVideosScreen(
+              accountKey: account,
+              load: ({provider}) => videos.list(provider: provider),
+              loadPage: ({provider, before}) => videos.page(
+                provider: provider, before: before,
+              ),
+              checkAvailability: videos.isApproved,
+              onOpenVideo: openApprovedVideo,
+              languageCode: Localizations.localeOf(context).languageCode,
+            ),
+          ])),
+        ]),
       ),
     );
   }

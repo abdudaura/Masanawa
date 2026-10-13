@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_session/audio_session.dart';
 import 'feed_media_api.dart';
 
 typedef OriginalMediaRenderer = Widget Function(FeedMediaGrant grant);
@@ -29,13 +30,26 @@ class _FeedMediaScreenState extends State<FeedMediaScreen>
   String? error;
   bool loading=false,offline=false,starting=false;
   int generation=0;
+  StreamSubscription<AudioInterruptionEvent>? _interruptions;
+  StreamSubscription<void>? _becomingNoisy;
   String tr(String en,String ha)=>Localizations.localeOf(context).languageCode=='ha'?ha:en;
   @override void initState(){
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(_listenForAudioInterruptions());
     final requested=widget.mediaIds.indexOf(widget.initialMediaId??'');
     index=requested<0?0:requested;
     WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)load();});
+  }
+  Future<void> _listenForAudioInterruptions() async {
+    final session=await AudioSession.instance;
+    if(!mounted)return;
+    _interruptions=session.interruptionEventStream.listen((event) {
+      if(event.begin) unawaited(player.pause());
+    });
+    _becomingNoisy=session.becomingNoisyEventStream.listen((_) {
+      unawaited(player.pause());
+    });
   }
   @override void didUpdateWidget(covariant FeedMediaScreen old){
     super.didUpdateWidget(old);
@@ -96,6 +110,8 @@ class _FeedMediaScreenState extends State<FeedMediaScreen>
   }
   @override void dispose(){
     generation++;WidgetsBinding.instance.removeObserver(this);
+    unawaited(_interruptions?.cancel());
+    unawaited(_becomingNoisy?.cancel());
     unawaited(player.dispose());super.dispose();
   }
   @override Widget build(BuildContext context){

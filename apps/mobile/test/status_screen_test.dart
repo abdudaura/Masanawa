@@ -90,6 +90,8 @@ void main() {
     expect(find.text('Explore'), findsNothing);
     expect(find.text('Live Talks'), findsNothing);
     expect(find.text('Create Talk'), findsNothing);
+    expect(find.text('Videos'), findsOneWidget);
+    expect(find.text('Updates'), findsOneWidget);
     expect(feed.requests, greaterThan(0));
     expect(tester.takeException(), isNull);
   });
