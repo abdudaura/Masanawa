@@ -21,9 +21,10 @@ void main() {
       expect(detectCountry('08012345678').iso, 'NG');
     });
 
-    test('bare digits opening with a known code resolve to it', () {
-      expect(detectCountry('2348012345678').iso, 'NG');
-      expect(detectCountry('254700000000').iso, 'KE');
+    test('local digits never switch the selected country', () {
+      for (final number in ['1', '2', '27', '33', '8012345678']) {
+        expect(detectCountry(number).iso, 'NG');
+      }
     });
 
     test('unknown codes report an unknown region', () {
@@ -32,6 +33,9 @@ void main() {
   });
 
   group('normalizeE164', () {
+    test('bare local digits never become a different international number', () {
+      expect(normalizeE164('1234567890'), '+2341234567890');
+    });
     test('keeps international format as-is', () {
       expect(normalizeE164('+233 24 123 4567'), '+233241234567');
     });

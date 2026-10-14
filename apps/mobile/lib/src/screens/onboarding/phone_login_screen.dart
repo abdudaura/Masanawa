@@ -24,6 +24,7 @@ class PhoneLoginScreen extends ConsumerStatefulWidget {
 
 class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   final _phone = TextEditingController();
+  PhoneCountry _phoneCountry = kDefaultCountry;
   final _email = TextEditingController();
   OtpChannel _channel = OtpChannel.email;
   List<OtpChannel>? _availableChannels;
@@ -75,11 +76,13 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   }
 
   void _continueWithPhone() async {
-    final e164 = normalizeE164(_phone.text);
+    final e164 = normalizeE164(_phone.text, country: _phoneCountry);
     final digits = e164.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 7 || digits.length > 15) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).invalidPhoneNumber)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).invalidPhoneNumber),
+        ),
       );
       return;
     }
@@ -94,7 +97,9 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     final email = _email.text.trim();
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).invalidEmailAddress)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).invalidEmailAddress),
+        ),
       );
       return;
     }
@@ -158,10 +163,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            PrimaryButton(
-              label: l10n.retry,
-              onPressed: _loadCapabilities,
-            ),
+            PrimaryButton(label: l10n.retry, onPressed: _loadCapabilities),
           ] else if (channels == null) ...[
             const Center(child: CircularProgressIndicator()),
           ] else ...[
@@ -211,8 +213,9 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                   filled: true,
                   fillColor: Theme.of(context).colorScheme.surface,
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(MasanawaTokens.radius['md']!),
+                    borderRadius: BorderRadius.circular(
+                      MasanawaTokens.radius['md']!,
+                    ),
                   ),
                 ),
               )
@@ -220,6 +223,8 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               PhoneField(
                 controller: _phone,
                 autofocus: true,
+                enabled: !sending && !_checking,
+                onCountryChanged: (country) => _phoneCountry = country,
               ),
             if (error != null) ...[
               const SizedBox(height: 12),
@@ -240,16 +245,16 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               label: sending
                   ? l10n.sendingCode
                   : _checking
-                      ? l10n.continueAction
-                      : _isEmail
-                          ? l10n.sendCode
-                          : l10n.continueAction,
+                  ? l10n.continueAction
+                  : _isEmail
+                  ? l10n.sendCode
+                  : l10n.continueAction,
               loading: sending || _checking,
               onPressed: sending || _checking
                   ? null
                   : _isEmail
-                      ? _sendEmailCode
-                      : _continueWithPhone,
+                  ? _sendEmailCode
+                  : _continueWithPhone,
             ),
             const SizedBox(height: 8),
             Text(

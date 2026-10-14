@@ -300,6 +300,27 @@ void main() {
     expect(api.accessToken, 'a3');
   });
 
+  test('email profile completion keeps the verified email despite added phone', () async {
+    adapter.respond('/auth/verify', {'code': 'NAME_REQUIRED_ON_SIGNUP'}, statusCode: 400);
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    await controller.verifyOtp(code, email: email);
+    adapter.respond('/auth/verify', {'code': 'AUTH_UNAVAILABLE'}, statusCode: 503);
+    await controller.submitProfile(name: 'Ada Obi', phone: phone);
+    expect(adapter.bodies.last, {'email': email, 'code': code, 'name': 'Ada Obi'});
+    final pending = container.read(sessionProvider) as SessionNameRequired;
+    expect(pending.channel, OtpChannel.email);
+    expect(pending.identifier, email);
+    adapter.respond('/auth/verify', {
+      'accessToken': 'new-access', 'refreshToken': 'new-refresh',
+      'accessExpiresIn': 900, 'user': user.toJson(),
+    });
+    await controller.submitProfile(name: 'Ada Obi');
+    expect(adapter.bodies.last, {'email': email, 'code': code, 'name': 'Ada Obi'});
+    expect(container.read(sessionProvider), isA<SessionSignedIn>());
+  });
+
   test('temporary failure during name capture preserves the verified OTP',
       () async {
     adapter.respond(
@@ -484,6 +505,7 @@ void main() {
 /// responses. Dio's MockAdapter needs a package dep; this keeps the test lean.
 class _FakeAdapter implements HttpClientAdapter {
   final _requests = <String>[];
+  final bodies = <dynamic>[];
   final _deferred = <String, Completer<ResponseBody>>{};
 
   void defer(String path) {
@@ -516,6 +538,7 @@ class _FakeAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     _requests.add('${options.method} ${options.path}');
+    bodies.add(options.data);
     final pending = _deferred[options.path];
     if (pending != null) return pending.future;
     final route = _next;
