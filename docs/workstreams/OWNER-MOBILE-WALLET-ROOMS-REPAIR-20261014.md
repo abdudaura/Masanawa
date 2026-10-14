@@ -63,3 +63,27 @@
 
 ## Progress log
 - Initial source inventory completed; this plan saved before subsequent changes. Feature implementation and real provider qualification are separately tracked.
+
+## Current implementation checkpoint (this session)
+
+Latest source checkpoint before appending: `4618ac94cae20c80078fdb639db64aae12f497f0` on owner correction branch / PR #738. **Source in progress; not merged or deployed.** All 15 source-head CI workflows were still queued at last poll. Prior intermediate Rooms integration runs exposed syntax, old tab assertions, and poll lifecycle failures; follow-up edits corrected the syntax, revised tests and polling; DO NOT imply latest green without current CI.
+
+### Committed source
+- Wordmark/header actions canonical green and white Chats/Wallet/Calls background; individual-chat SIM icon replaced by **Data Bundles** text.
+- Stock names Gwani/Gwana cleaned with legacy alias upgrades (Bodi/Sulafat remain voice metadata).
+- Real portrait URLs preferred; old cartoon SVG fallback removed and replaced by initials. **The 26 required real portrait assets remain unmatched**, so the owner's image requirement is NOT complete. Previously produced Library collage pictures are not authoritative to match every profile.
+- NGN/legacy Credits loads separated; unknown NGN readback shown unavailable, not false zero. Gateway now has independently authenticated **GET /v1/wallet/ngn** when Flutterwave checkout is disabled (read-only). Test covers forbidden writes and unauthorized sessions. Crypto provider remains unqualified.
+- Data Bundles replaced drop-down form with network cards/prefix suggestion, phone field, plan groups from returned catalog text, NGN amount/funding link and quote confirmation. **Real operator logos not yet bundled**; fallback monograms. Provider purchase currently unavailable on Railway (missing Flutterwave configuration).
+- Rooms directory profession/title, teacher identity chip, membership/price; joined opens one conversational screen; nonjoined sees compact join info. Existing Rooms question/answer backend is the authenticated persistent mechanism, **not yet a separately built complete room-wide chat transport**. Follow-up added owner ID to room Question model, PG projection and UI; own/other authors visually separated. Pending teacher answer polls at 3 seconds and stops after completion/leave. Existing paid Rooms unactivated; never invent price/trial.
+- Paystack adapter `paystack_dedicated_accounts.ts` and focused tests: explicit consent, asynchronous assignment, only verified active account readback, raw-body HMAC-SHA512 signature verification, requery final NGN transaction. **Not yet registered or persisted, no DVA account issuance, no Paystack-to-NGN canonical credit**, no merchant key/environment readiness; do NOT display fabricated account numbers.
+
+### Remaining blocking scope
+1. Reconcile latest CI: Gateway type/build + new Paystack, NGN route and Rooms tests, full Flutter and Android. Correct actual errors; don't claim a new APK if no successful verified latest build.
+2. Implement account-bound Paystack DVA storage, signed webhook route, transaction-to-account matching and one-credit-only ledger in existing canonical PostgreSQL. Add explicit opt-in & identity/KYC flow in Wallet; only enable with approved Paystack merchant and secure keys.
+3. Wire Flutterwave credentials, verify data catalog, backend NGN debit and test bill fulfillment/receipts on production or approved provider sandbox. No purchases without authority.
+4. Connect *actual original* 26 photo portraits by authoritative stable ID, not SVG cartoons, random Library collage assignments or name-guessing.
+5. Upgrade Rooms to qualified room-level chat if existing per-question persistence cannot meet all realtime/group/teacher behavior; verify teacher worker/auth/status/price/entitlements.
+6. Verify Crypto and other provider capabilities separately. Gateway is still old `main` at last inspection; no rollout/merge until test+financial qualification. Test physical handset, only then deliver precisely matching new APK.
+
+### Current app-reported problem root causes
+Railway Gateway `main` lacks this correction branch, `FLUTTERWAVE_BILLS_ENABLED` and NOWPayments credentials were not present among public variable names. NGN route was mounted only when Flutterwave billing wallet assembled; without that it returned 404. Crypto separate endpoints depend on NOWPayments credentials/capability. App cannot have real funding/account numbers until merchant Paystack approval, authenticated DVA creation and signed settlement reconciliation.
