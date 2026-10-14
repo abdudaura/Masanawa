@@ -92,3 +92,34 @@ Railway project `f6d9af7c-5be4-457b-9614-936687391aea`; prod environment `24403d
 ## Immediate next action
 
 Inspect the WIP diff and fix the known audio response parser first, then finish source tasks sequentially with focused tests and recorded results. Do not compile or announce completion while known incomplete WIP or any checklist item remains. No further confirmation is needed to continue the owner's authorized task.
+
+
+## Verification and implementation update — 14 October, current GitHub-connected session
+
+This section supersedes the old "Immediate next action" checkpoint above. **Preserve this branch and its complete prior implementation.** The session started from commit `57f5e4ccdcb66d8fd922e729dca7668c95185477` and PR #738. Source changed through GitHub Contents API because the old /workspace working directory and local Flutter toolchain were unavailable in this runtime; production-code checks were delegated to immutable GitHub Actions revisions.
+
+### Confirmed source commits (in order)
+
+- `02df069862358e951545fa8f995fa5f835114054`: Gateway Gemini Interactions output now wraps authenticated headerless mono 16-bit / 24 kHz PCM in a real RIFF/WAV container before returning a single downloadable voice-reply attachment; raw PCM callback remains unchanged. No fallback to fabricated speech.
+- `ef99d40c47af098b7b515acd431daf3a7b035844`: native audio test proves WAV signature, format, sample rate, length, payload and raw PCM callback; malformed formats remain rejected. Official Google documentation for explicit `audio/l16` confirmed 14 October.
+- `a5772da6d2611f10883e1941e9a4b6f8e2a1d6ec`: increment app `1.0.2+3` to `1.0.3+4`.
+- `81249092c1bce6d69ad2317268ae352002315525`: add owner acceptance workflow for full Flutter tests, production Gateway compile and native audio/catalog/live-token regressions.
+- `f779f5f9d79d294b7bb00f952b92cef9e0cc162c`: independently inspect APK with Android `apksigner` and `aapt`, verify version `1.0.3+4` and preserve build provenance incl. explicit Gateway origin; signed may mean **debug certificate**, not Play Store certificate.
+- `a79bedb39bc445cfc1ccc909c39c714680ac6082`: fix the **two remaining** full-suite Talk Sponsor/Add AI regressions by explicitly setting `isAvailable: true` on the intended successful mock candidate in `apps/mobile/test/talk_screen_test.dart`. Production model intentionally defaults missing `isAvailable` to false, and UI must not permit purchases when availability is unproven. Do **not** alter this safeguard or replace with optimistic availability.
+
+### Executed CI and production evidence (do not infer what is not tested)
+
+- Source snapshot `f779f5f`: Owner Mobile Corrections Acceptance run `38536391517`: Gateway build + Google voice/audio/token tests **SUCCESS**; full Flutter suite **749 passed, 2 failed**. Both failures in Talk screen tests (expected Sponsor/Add, hidden due to unavailable mock), investigated and source-corrected in `a79bedb`; **follow-up full-suite success requires run 38537077478 to pass**.
+- Voice Note Regression run `38536391658`: **SUCCESS**; Masana Professional Roster Integration run `38536391817`: Gateway/server-roster and Flutter-roster jobs **SUCCESS**, 26 offline SVG avatars and 26 SVG banners exist in indexed `apps/mobile/assets/masana/{avatars,banners}/`. These pass bundled-asset tests, NOT an external originality/artistic review of 26 owner-requested images.
+- Full Mobile Build run `38536391603` **FAILURE** at whole-project Flutter analyze (old infos/warnings). Foundation CI `38536391692` **FAILURE** at older `packages/agents` `TalkId` export test. Status Video Integration strict TypeScript checks also have multiple old Talk-module test errors. These are **not green**, do not misreport or bypass them. Reconcile against base before touching shared modules.
+- Railway production Gateway `c90abb29-f649-4c65-a7b4-333f8056227b` deployment `48e5ff5e-0772-4f4b-9f9d-ad4e08e1f835` is SUCCESS but uses **old main SHA `642c7d326ec46bb775b0486ce3bed4be8b395b46`**, not these owner corrections. Read-only HTTPS `/readyz` was independently checked at `https://masanawa-gateway-production-338f.up.railway.app/readyz` and returned HTTP 200 with `database-schema` ready. Neither proves the owner branch deployed nor Gemini authentic TTS voice IDs / Start Trial provider session successful. The available Railway connector redacts the Gemini secret.
+- New APK run `38537077391`, app version `1.0.3+4`, **requires completion, signature output, exact-build artifact, download test and handset/provider acceptance**. GitHub artifact ZIP is not automatically a public permanent mobile HTTPS link. Do not supply old `1.0.2+3` APK.
+- No financial purchases executed. Data-bundle-only catalog/execution fences from the preserved branch have not been live provider-qualified. Keep MSN monetary activation gates off until independently qualified.
+- PR #738 remains **draft/unmerged** pending full-suite, APK checks, signed verification, and owner acceptance. Do not merge failing/unsafe work for the sake of handoff.
+
+### Remaining acceptance priority
+
+1. Verify `38537077478` runs full Flutter successfully after corrected seat mock, and compare `38537077391` release build signature/version; inspect job logs.
+2. Exercise Google /v1beta/voices using an authorized server-side credential (never copy or reveal it) to confirm Bodi male, Fola female, and 26 genuinely distinct usable IDs; prove authenticated voice and Start Trial end to end on a device where provider access exists.
+3. Verify full 17 owner items **as behaviors**, including media gestures, account switch cleanup, distinct portraits, Rooms searching, finance product restrictions and one playable reply for each voice turn. Source/widget tests are insufficient for handset and provider claims.
+4. If qualified, upload precisely the matching new version APK as a ZIP container to phone-accessible HTTPS via controlled artifact transfer, verify GET/HEAD and expiry, then merge tested compatible changes to main through PR with reconciled file claims and branch policies. If not qualified, leave PR draft and state exact blockers.
