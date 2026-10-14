@@ -84,6 +84,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   bool _hasText = false;
   VoiceNoteRecorder? _localRecorder;
   Completer<void>? _recordingDone;
+  String? _recordingAccountId;
   List<ChatAttachment> _pendingAttachments = const [];
   AiChatMessage? _replyingTo;
   bool _showSearch = false;
@@ -124,6 +125,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       final previousId = previous is SessionSignedIn ? previous.user.id : null;
       final nextId = next is SessionSignedIn ? next.user.id : null;
       if (previousId != nextId) {
+        if (_recordingDone?.isCompleted == false) _recordingDone!.complete();
+        unawaited(_localRecorder?.cancel() ?? Future<void>.value());
         unawaited(_inlineVoiceSession?.close() ?? Future<void>.value());
         unawaited(_modalVoiceSession?.close() ?? Future<void>.value());
       }
@@ -375,14 +378,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final session = ref.read(sessionProvider);
     if (session is! SessionSignedIn || session.user.id.isEmpty) return;
     final accountId = session.user.id;
+    _recordingAccountId = accountId;
     final recorder = ref.read(voiceNoteRecorderFactoryProvider)();
     _voiceNoteSheetOpen = true;
     FocusScope.of(context).unfocus();
-    bool sameAccount() {
-      if (!mounted) return false;
-      final active = ref.read(sessionProvider);
-      return active is SessionSignedIn && active.user.id == accountId;
-    }
     try {
       final done = Completer<void>();
       _recordingDone = done;
@@ -391,6 +390,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
     } finally {
       await recorder.close();
+      _recordingAccountId = null;
+      _recordingDone = null;
       _voiceNoteSheetOpen = false;
       if (mounted) setState(() => _localRecorder = null);
     }
@@ -748,7 +749,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         agent.displayName,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: u.textPrimary,
                           fontSize: 16.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -757,7 +758,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         workingLabel,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: .82),
+                          color: u.textMuted,
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                         ),
@@ -769,6 +770,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
           actions: [
+            if (_selectedMessageIds.isEmpty && !_showSearch)
+              IconButton(
+                tooltip: 'Buy data bundle',
+                icon: const Icon(Icons.sim_card_outlined),
+                onPressed: () => context.push('/billing?service=data'),
+              ),
             if (_selectedMessageIds.isNotEmpty) ...[
               IconButton(
                 tooltip: 'Copy selected',
@@ -1082,10 +1089,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
             if (_localRecorder case final recorder?)
               VoiceNoteComposer(recorder: recorder,
-                isOwnerCurrent: () => mounted && ref.read(sessionProvider) is SessionSignedIn,
+                isOwnerCurrent: () {
+                  final active = ref.read(sessionProvider);
+                  return mounted && active is SessionSignedIn &&
+                      _recordingAccountId != null &&
+                      active.user.id == _recordingAccountId;
+                },
                 onDismiss: () { if (_recordingDone?.isCompleted == false) _recordingDone!.complete(); },
                 onSend: (attachment) async {
-                  if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return false;
+                  final active = ref.read(sessionProvider);
+                  if (!mounted || active is! SessionSignedIn ||
+                      active.user.id != _recordingAccountId ||
+                      ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return false;
                   await ref.read(aiChatProvider.notifier).sendAttachment(widget.characterId, attachment);
                   return mounted;
                 }),
