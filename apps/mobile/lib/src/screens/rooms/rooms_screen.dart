@@ -8,6 +8,7 @@ import '../../features/rooms/rooms_client.dart';
 import '../../features/rooms/rooms_screen.dart' as canonical;
 import '../../features/rooms/saved_lessons_client.dart';
 import '../../state/session_state.dart';
+import '../../state/agent_directory_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 /// Reuses the existing authenticated Gateway Dio and the canonical J07 Rooms
@@ -132,6 +133,10 @@ class RoomsScreen extends ConsumerWidget {
 
     final ownerAccount = session.user.id;
     final api = ref.watch(apiClientProvider);
+    final teacherNames = {
+      for (final agent in ref.watch(agentDirectoryProvider).agents)
+        agent.characterId: agent.displayName,
+    };
     String? currentAccount() {
       // A disposed tab must fail closed rather than retaining another fan's
       // data in an in-flight read, even after logout or account replacement.
@@ -184,6 +189,7 @@ class RoomsScreen extends ConsumerWidget {
           currentAccountKey: currentAccount,
         ),
         savedLessonsAccountKey: ownerAccount,
+        teacherNames: teacherNames,
       ),
     );
   }
@@ -202,6 +208,10 @@ class MasanaRoomDetailScreen extends ConsumerWidget {
     }
     final accountId=session.user.id;
     final api=ref.watch(apiClientProvider);
+    final teacherNames = {
+      for (final agent in ref.watch(agentDirectoryProvider).agents)
+        agent.characterId: agent.displayName,
+    };
     String? currentAccount(){
       try{
         final current=ref.read(sessionProvider);
@@ -224,6 +234,7 @@ class MasanaRoomDetailScreen extends ConsumerWidget {
         savedLessonsClient:DioSavedLessonsClient(
           dio:api.dio,accountKey:accountId,currentAccountKey:currentAccount),
         savedLessonsAccountKey:accountId,
+        teacherNames:teacherNames,
       ),
     );
   }
