@@ -49,51 +49,180 @@ class _RoomsScreenState extends State<RoomsScreen>{
    if(mounted&&version==_loadVersion)setState((){rows=list;loading=false;});
   }catch(e){if(mounted&&version==_loadVersion)setState((){error=e;loading=false;});}
  }
- @override Widget build(BuildContext context)=>Scaffold(
-  appBar:AppBar(title:const Text('Rooms'),backgroundColor:Colors.white,foregroundColor:Colors.black87),
-  body:Column(children:[
-   Padding(padding:const EdgeInsets.all(12),child:TextField(
-    decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Search rooms, topics or hosts'),
-    onChanged:(v){query=v;++_loadVersion;_searchDebounce?.cancel();
-     _searchDebounce=Timer(const Duration(milliseconds:300),load);},
-    onSubmitted:(v){_searchDebounce?.cancel();query=v;load();})),
-   Padding(padding: const EdgeInsets.symmetric(horizontal:16), child: Row(children:[
-    ChoiceChip(label:const Text('Discover'),selected:!joined,onSelected:(_){joined=false;load();}),
-    const SizedBox(width:8),
-    ChoiceChip(label:const Text('Joined'),selected:joined,onSelected:(_){joined=true;load();}),
-    const Spacer(),
-    DropdownButton<String>(value:language,items:const [
-     DropdownMenuItem(value:'',child:Text('All')),
-     DropdownMenuItem(value:'en',child:Text('English')),
-     DropdownMenuItem(value:'ha',child:Text('Hausa'))],
-     onChanged:(v){language=v??'';load();})
-   ])),
-   Expanded(child:loading?const Center(child:CircularProgressIndicator()):
-    error!=null?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
-     Text(roomError(error!)),TextButton(onPressed:load,child:const Text('Retry'))])):
-    rows.isEmpty?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
-     const Text('No Rooms match this search.'),
-     TextButton(onPressed:(){query='';language='';load();},child:const Text('Show all'))])):
-    RefreshIndicator(onRefresh:load,child:ListView.builder(itemCount:rows.length,itemBuilder:(context,i){
-     final r=rows[i];return Padding(padding: const EdgeInsets.symmetric(horizontal:12,vertical:5), child: Card(child: ListTile(contentPadding: const EdgeInsets.all(14),
-      leading:const CircleAvatar(child:Icon(Icons.school_outlined)),
-      title:Text(r.title,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w600)),subtitle:Text("${r.language} · ${r.members} members · ${r.paid ? 'Paid' : 'Free'}"),
-      trailing:Icon(r.joined?Icons.check_circle_outline:Icons.chevron_right,color:masanaBlue),
-      onTap:()async{
-       await Navigator.push<void>(context,MaterialPageRoute(builder:(routeContext){
-        final detail=RoomHomeScreen(client:widget.client,id:r.id,
-          discussionApi:widget.discussionApi,discussionAccountScope:widget.discussionAccountScope,
-          onDiscussionReport:widget.onDiscussionReport,
-          savedLessonsClient:widget.savedLessonsClient,savedLessonsAccountKey:widget.savedLessonsAccountKey,
-          membershipClient:widget.membershipClient);
-        return widget.protectDetail?.call(routeContext,detail)??detail;
-       }));
-       if(mounted)load();
-      })));
-    })))
-  ]),
- );
+  void _resetSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    query = '';
+    language = '';
+    load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Rooms')),
+      body: Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: TextField(
+            controller: _searchController,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: 'Search rooms or topics',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: query.isEmpty ? null : IconButton(
+                tooltip: 'Clear Rooms search',
+                icon: const Icon(Icons.close),
+                onPressed: _resetSearch,
+              ),
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() => query = value.trim());
+              // Invalidate all in-flight results immediately; the next
+              // debounced query is the sole authority for this list.
+              ++_loadVersion;
+              _searchDebounce?.cancel();
+              _searchDebounce = Timer(const Duration(milliseconds: 300), load);
+            },
+            onSubmitted: (value) {
+              _searchDebounce?.cancel();
+              query = value.trim();
+              load();
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 0,
+              children: [
+                ChoiceChip(
+                  label: const Text('Discover'),
+                  selected: !joined,
+                  onSelected: (_) => setState(() { joined = false; load(); }),
+                ),
+                ChoiceChip(
+                  label: const Text('Joined'),
+                  selected: joined,
+                  onSelected: (_) => setState(() { joined = true; load(); }),
+                ),
+                DropdownButton<String>(
+                  value: language,
+                  isDense: true,
+                  underline: const SizedBox.shrink(),
+                  items: const [
+                    DropdownMenuItem(value: '', child: Text('All languages')),
+                    DropdownMenuItem(value: 'en', child: Text('English')),
+                    DropdownMenuItem(value: 'ha', child: Text('Hausa')),
+                  ],
+                  onChanged: (value) =>
+                      setState(() { language = value ?? ''; load(); }),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: loading
+              ? const Center(child: CircularProgressIndicator())
+              : error != null
+                  ? Center(child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(roomError(error!)),
+                        TextButton(onPressed: load, child: const Text('Retry')),
+                      ],
+                    ))
+                  : rows.isEmpty
+                      ? Center(child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('No Rooms match this search.'),
+                            TextButton(onPressed: _resetSearch,
+                              child: const Text('Show all')),
+                          ],
+                        ))
+                      : RefreshIndicator(
+                          onRefresh: load,
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: rows.length,
+                            itemBuilder: (context, index) {
+                              final room = rows[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 2),
+                                child: Card(
+                                  margin: EdgeInsets.zero,
+                                  child: ListTile(
+                                    visualDensity: VisualDensity.compact,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 2),
+                                    leading: CircleAvatar(
+                                      backgroundColor: color.primaryContainer,
+                                      foregroundColor: color.onPrimaryContainer,
+                                      child: const Icon(Icons.school_outlined,
+                                        size: 20),
+                                    ),
+                                    title: Text(room.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600)),
+                                    subtitle: Text(
+                                      '${room.language} · ${room.members} members'
+                                      '${room.paid ? ' · Paid' : ''}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis),
+                                    trailing: Icon(
+                                      room.joined
+                                          ? Icons.check_circle_outline
+                                          : Icons.chevron_right,
+                                      color: color.primary),
+                                    onTap: () async {
+                                      await Navigator.push<void>(
+                                        context,
+                                        MaterialPageRoute(builder: (routeContext) {
+                                          final detail = RoomHomeScreen(
+                                            client: widget.client,
+                                            id: room.id,
+                                            discussionApi: widget.discussionApi,
+                                            discussionAccountScope:
+                                                widget.discussionAccountScope,
+                                            onDiscussionReport:
+                                                widget.onDiscussionReport,
+                                            savedLessonsClient:
+                                                widget.savedLessonsClient,
+                                            savedLessonsAccountKey:
+                                                widget.savedLessonsAccountKey,
+                                            membershipClient:
+                                                widget.membershipClient,
+                                          );
+                                          return widget.protectDetail
+                                              ?.call(routeContext, detail) ?? detail;
+                                        }),
+                                      );
+                                      if (mounted) load();
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+        ),
+      ]),
+    );
+  }
 }
+
 class RoomHomeScreen extends StatefulWidget {
  const RoomHomeScreen({super.key,required this.client,required this.id,
   this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey,
