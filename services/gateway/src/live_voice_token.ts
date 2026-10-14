@@ -13,6 +13,10 @@ export function createGeminiLiveTokenService(input: {
   readonly platformProfiles?: PlatformAgentProfileRepository;
   readonly model?: string;
   readonly voiceName?: string;
+  /// Official provider catalog lookup for each platform persona. When the
+  /// persisted seed still contains an old shared voice, resolve an individual
+  /// current voice before asking Google to open a live session.
+  readonly resolveVoice?: (displayName: string) => Promise<string | undefined>;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => Date;
   readonly callHistory?: CallHistoryRecorder;
@@ -34,7 +38,7 @@ export function createGeminiLiveTokenService(input: {
   const apiKey = input.apiKey.trim();
   if (!apiKey) throw new TypeError("Gemini API key is required");
   const model = input.model?.trim() || "gemini-3.8-live";
-  const voiceName = input.voiceName?.trim() || "Kore";
+  const voiceName = input.voiceName?.trim() || "Bodi";
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? (() => new Date());
 
@@ -94,11 +98,22 @@ export function createGeminiLiveTokenService(input: {
             characterId,
           })
         : null;
-      const selectedVoiceName =
-        profile?.voiceProvider.toLowerCase() === "gemini" &&
-        profile.voiceName.trim()
-          ? profile.voiceName.trim()
-          : voiceName;
+      const savedVoice = profile?.voiceProvider.toLowerCase() === "gemini"
+        ? profile.voiceName.trim()
+        : "";
+      const legacyVoices = new Set([
+        "sulafat", "kore", "zephyr", "puck", "charon", "fenrir", "leda",
+      ]);
+      const resolvedVoice = input.resolveVoice
+        ? await observe("voice-catalog", () =>
+            input.resolveVoice!(admission.presentation.displayName))
+        : undefined;
+      const selectedVoiceName = resolvedVoice?.trim()
+        || (!legacyVoices.has(savedVoice.toLowerCase()) ? savedVoice : "")
+        || voiceName;
+      if (!selectedVoiceName.trim() || legacyVoices.has(selectedVoiceName.toLowerCase())) {
+        throw new Error("google.voice_catalog.unqualified_voice");
+      }
       if (input.callHistory && !profile) {
         throw new CallHistoryError("calls.masana_unavailable", 403);
       }
