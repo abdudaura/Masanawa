@@ -114,6 +114,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
   bool _inlineVoiceClosing = false;
   bool _voiceNoteSheetOpen = false;
+  final _voiceComposerKey = GlobalKey<VoiceNoteComposerState>();
+  bool _heldMicCancelled = false;
+  bool _heldMicLocked = false;
 
   @override
   void initState() {
@@ -363,6 +366,39 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       ),
     );
     return false;
+  }
+
+  void _micHoldStart() {
+    _heldMicCancelled = false;
+    _heldMicLocked = false;
+    unawaited(_openVoiceNoteComposer());
+  }
+
+  void _micHoldMove(Offset offsetFromOrigin) {
+    if (_heldMicCancelled) return;
+    if (offsetFromOrigin.dx < -72) {
+      _heldMicCancelled = true;
+    } else if (offsetFromOrigin.dy < -72) {
+      _heldMicLocked = true;
+      _voiceComposerKey.currentState?.lockRecording();
+    }
+  }
+
+  void _micHoldEnd() {
+    final cancel = _heldMicCancelled;
+    final locked = _heldMicLocked;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final composer = _voiceComposerKey.currentState;
+      if (composer == null) return;
+      if (cancel) {
+        unawaited(composer.cancelFromGesture());
+      } else if (locked) {
+        composer.lockRecording();
+      } else {
+        unawaited(composer.sendOnRelease());
+      }
+    });
   }
 
   /// Record a local voice message, without starting a paid LiveKit/Gemini call.
@@ -1077,6 +1113,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 onMic: updateRequired
                     ? () {}
                     : () => unawaited(_openVoiceNoteComposer()),
+                onMicHoldStart: updateRequired ? () {} : _micHoldStart,
+                onMicHoldMove: updateRequired ? (_) {} : _micHoldMove,
+                onMicHoldEnd: updateRequired ? () {} : _micHoldEnd,
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -1088,7 +1127,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 },
               ),
             if (_localRecorder case final recorder?)
-              VoiceNoteComposer(recorder: recorder,
+              VoiceNoteComposer(key: _voiceComposerKey, recorder: recorder,
                 isOwnerCurrent: () {
                   final active = ref.read(sessionProvider);
                   return mounted && active is SessionSignedIn &&
@@ -2376,6 +2415,9 @@ class _Composer extends StatelessWidget {
     required this.onStop,
     required this.onAttach,
     required this.onMic,
+    required this.onMicHoldStart,
+    required this.onMicHoldMove,
+    required this.onMicHoldEnd,
     required this.onEmojiToggle,
   });
 
@@ -2386,6 +2428,9 @@ class _Composer extends StatelessWidget {
   final VoidCallback onStop;
   final VoidCallback onAttach;
   final VoidCallback onMic;
+  final VoidCallback onMicHoldStart;
+  final ValueChanged<Offset> onMicHoldMove;
+  final VoidCallback onMicHoldEnd;
   final VoidCallback onEmojiToggle;
 
   @override
@@ -2450,7 +2495,14 @@ class _Composer extends StatelessWidget {
                   color: u.brand,
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
-                  child: InkWell(
+                  child: GestureDetector(
+                    onLongPressStart: sending || hasText
+                        ? null : (_) => onMicHoldStart(),
+                    onLongPressMoveUpdate: sending || hasText
+                        ? null : (details) => onMicHoldMove(details.offsetFromOrigin),
+                    onLongPressEnd: sending || hasText
+                        ? null : (_) => onMicHoldEnd(),
+                    child: InkWell(
                     onTap: sending ? onStop : (hasText ? onSend : onMic),
                     child: SizedBox(
                       width: 48,
@@ -2469,6 +2521,7 @@ class _Composer extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ),
                   ),
                 ),
               ),
