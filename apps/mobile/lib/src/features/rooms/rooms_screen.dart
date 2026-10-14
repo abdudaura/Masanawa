@@ -481,7 +481,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
                    Text(message.status,
                      style:Theme.of(ctx).textTheme.bodySmall),
                ]))),
-            )));
+            ));
         },
        ))),
       SafeArea(top:false,child:Padding(
