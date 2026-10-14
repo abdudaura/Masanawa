@@ -33,6 +33,7 @@ class RoomsScreen extends StatefulWidget {
  final RoomMembershipClient? membershipClient;
  final RoomDetailProtector? protectDetail;
  final Map<String,String> teacherNames;
+ final String? viewerId;
  @override State<RoomsScreen> createState()=>_RoomsScreenState();
 }
 class _RoomsScreenState extends State<RoomsScreen>{
