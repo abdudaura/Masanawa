@@ -38,8 +38,15 @@ describe("Google Interactions native audio", () => {
     );
     expect(received).toHaveLength(1);
     expect(received[0]).toEqual(pcm);
-    expect(result.mimeType).toBe("audio/l16");
-    expect(Buffer.from(result.dataBase64, "base64")).toEqual(pcm);
+    expect(result.mimeType).toBe("audio/wav");
+    const wav = Buffer.from(result.dataBase64, "base64");
+    expect(wav.toString("ascii", 0, 4)).toBe("RIFF");
+    expect(wav.toString("ascii", 8, 12)).toBe("WAVE");
+    expect(wav.readUInt32LE(24)).toBe(24000);
+    expect(wav.readUInt16LE(22)).toBe(1);
+    expect(wav.readUInt16LE(34)).toBe(16);
+    expect(wav.readUInt32LE(40)).toBe(pcm.length);
+    expect(wav.subarray(44)).toEqual(pcm);
     expect(result.durationMs).toBeGreaterThan(0);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
