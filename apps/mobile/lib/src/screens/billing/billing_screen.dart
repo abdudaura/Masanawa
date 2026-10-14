@@ -5,22 +5,22 @@ import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
 import '../../state/wallet_state.dart';
 
+bool isDataBundleBillCategory(BillCategory category) {
+  final code = category.code.trim().toUpperCase();
+  return code == 'MOBILEDATA' || code == 'MOBILE_DATA' ||
+      code == 'MOBILE-DATA' || code == 'DATA' ||
+      code == 'INTERNET' || code == 'INTERNET_DATA' ||
+      code == 'INTERNET-DATA';
+}
+
 BillCategory? billingCategoryForHomeService(
   List<BillCategory> categories,
   String? service,
 ) {
-  final initial = service?.trim().toLowerCase();
-  if (initial == null || initial.isEmpty) return null;
-  final terms = switch (initial) {
-    'data' => const ['data', 'internet'],
-    'airtime' => const ['airtime', 'air time', 'mobile recharge'],
-    'electricity' => const ['electricity', 'power'],
-    'tv' => const ['tv', 'cable', 'television'],
-    _ => <String>[initial],
-  };
-  for (final value in categories) {
-    final haystack = (value.code + ' ' + value.name).toLowerCase();
-    if (terms.any(haystack.contains)) return value;
+  // Retired bill types do not reopen a checkout through a legacy deep link.
+  if (service != null && service.toLowerCase() != 'data') return null;
+  for (final category in categories) {
+    if (isDataBundleBillCategory(category)) return category;
   }
   return null;
 }
@@ -78,7 +78,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final nextHistory = await api.billingHistory(limit: 30);
       if (!mounted) return;
       setState(() {
-        categories = nextCategories;
+        categories = nextCategories.where(isDataBundleBillCategory).toList(growable: false);
         history = nextHistory;
         loading = false;
       });
@@ -97,7 +97,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> selectCategory(BillCategory? value) async {
-    if (value == null || busy) return;
+    if (value == null || busy || !isDataBundleBillCategory(value)) return;
     setState(() {
       category = value;
       biller = null;
@@ -156,7 +156,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final selectedItem = item;
     final recipient = customer.text.trim();
     final rawAmount = amount.text.trim();
-    if (selectedCategory == null || selectedBiller == null || selectedItem == null) {
+    if (selectedCategory == null || !isDataBundleBillCategory(selectedCategory) ||
+        selectedBiller == null || selectedItem == null) {
       setState(() => error = 'Choose a category, provider and service.');
       return;
     }
@@ -258,11 +259,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bills & payments'),
+        title: const Text('Data bundles'),
         actions: [
           if (current != null)
             IconButton(
-              tooltip: 'New bill',
+              tooltip: 'New data bundle',
               onPressed: busy ? null : newBill,
               icon: const Icon(Icons.add),
             ),
@@ -292,7 +293,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             const SizedBox(height: 28),
             Row(
               children: [
-                Text('Recent bills', style: Theme.of(context).textTheme.titleMedium),
+                Text('Payment history', style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 IconButton(
                   tooltip: 'Refresh history',
@@ -304,7 +305,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             if (history.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 28),
-                child: Center(child: Text('No bill payments yet')),
+                child: Center(child: Text('No payments yet')),
               )
             else
               for (final entry in history)
@@ -332,13 +333,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Pay a bill', style: Theme.of(context).textTheme.headlineSmall),
+        Text('Buy a data bundle', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 6),
-        const Text('Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.'),
+        const Text('Select your network and bundle. Review the recipient and price before using your wallet.'),
         const SizedBox(height: 18),
         DropdownButtonFormField<BillCategory>(
           value: category,
-          decoration: const InputDecoration(labelText: 'Category'),
+          decoration: const InputDecoration(labelText: 'Data service'),
           items: categories.map((value) => DropdownMenuItem(
             value: value,
             child: Text(value.name),
@@ -378,9 +379,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             decoration: InputDecoration(
               labelText: selectedItem.labelName?.trim().isNotEmpty == true
                   ? selectedItem.labelName
-                  : (category?.code == 'AIRTIME' || category?.code == 'MOBILEDATA')
-                      ? 'Phone number'
-                      : 'Customer / meter / smartcard number',
+                  : 'Phone number',
             ),
           ),
           const SizedBox(height: 12),
@@ -461,7 +460,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           OutlinedButton.icon(
             onPressed: busy ? null : newBill,
             icon: const Icon(Icons.add),
-            label: const Text('Pay another bill'),
+            label: const Text('Buy another bundle'),
           ),
         ],
       ],
