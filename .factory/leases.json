@@ -2146,7 +2146,12 @@
         "services/gateway/src/customer_auth.ts"
       ],
       "scope": "Owner-reported registration, country input, language selector and simple launcher artwork; consumer app only",
-      "notes": "No overlapping unreleased claim found. Preserve server OTP authorization and Firebase configuration. Owner requested OTP email template branding update; use existing green palette and remove rejected blue/M artwork. Retain OTP delivery/auth security. Narrow build-origin alignment: Windows build script and general Mobile Build still override the new Gateway with its retired origin. Preserve all checks/signing."
+      "notes": "No overlapping unreleased claim found. Preserve server OTP authorization and Firebase configuration. Owner requested OTP email template branding update; use existing green palette and remove rejected blue/M artwork. Retain OTP delivery/auth security. Narrow build-origin alignment: Windows build script and general Mobile Build still override the new Gateway with its retired origin. Preserve all checks/signing.",
+      "released_at": "2026-10-14T05:20:58.650488Z",
+      "source_head": "642c7d326ec46bb775b0486ce3bed4be8b395b46",
+      "source_pr": 737,
+      "integration_head_sha": "642c7d326ec46bb775b0486ce3bed4be8b395b46",
+      "release_reason": "Merged PR #737. Final handset APK source ff99b8b62 matches merged main; version1.0.2+3, signature/ZIPdigest verified. 75focused tests and scoped analysis passed; all30 full-suite failures reproduced on baseline. Green OTP template Gateway deployment48e5ff5e SUCCESS at source642c7d326; readyz and email capabilities verified. Physical-device registration/install and email-client appearance remain owner acceptance."
     }
   ],
   "history": [
