@@ -60,10 +60,31 @@ jobs:
           --dart-define=AGENT_BASE_URL=https://masanawa-gateway-production-338f.up.railway.app
       - name: Inspect APK result
         run: test -s build/app/outputs/flutter-apk/app-release.apk
+      - name: Verify Android APK signing and version
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          SIGNER=$(find "${ANDROID_HOME}/build-tools" -name apksigner -type f | sort -V | tail -1)
+          test -n "$SIGNER"
+          "$SIGNER" verify --verbose --print-certs "$APK"
+          AAPT=$(find "${ANDROID_HOME}/build-tools" -name aapt -type f | sort -V | tail -1)
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "versionName='1.0.3'" "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "versionCode='4'" "$RUNNER_TEMP/apk-badging.txt"
+      - name: Record source and target Gateway provenance
+        run: |
+          {
+            echo "commit=${GITHUB_SHA}"
+            echo "version=1.0.3+4"
+            echo "api_origin=https://masanawa-gateway-production-338f.up.railway.app"
+            echo "agent_origin=https://masanawa-gateway-production-338f.up.railway.app"
+            echo "signing=verified-apksigner (debug-key fallback possible; NOT store certification)"
+          } > build/app/outputs/flutter-apk/BUILD-PROVENANCE.txt
       - name: Preserve compiled handset APK
         uses: actions/upload-artifact@v4
         with:
           name: masanawa-26-masana-handset-apk
-          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          path: |
+            apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+            apps/mobile/build/app/outputs/flutter-apk/BUILD-PROVENANCE.txt
           if-no-files-found: error
           retention-days: 7
