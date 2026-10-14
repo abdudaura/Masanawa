@@ -220,7 +220,7 @@ void main() {
               Localizations.localeOf(
                 tester.element(find.byType(FiveTabShell)),
               ).languageCode,
-              locale == 'ha' ? 'en' : locale,
+              locale,
             );
             final field = find.byType(TextField);
             await tester.enterText(field, 'no authorized match');
@@ -288,7 +288,7 @@ void main() {
             await tab(4);
             await save('rooms-unavailable');
             expect(
-              find.text('Could not load rooms. Pull to try again.'),
+              find.text('Sign in to view your Rooms.'),
               findsOneWidget,
             );
             await tab(1);
