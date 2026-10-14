@@ -60,11 +60,20 @@ void main() {
     // still waiting for its audio rendering.
     await controller.syncFromServer('character-1');
     expect(controller.threadOf('character-1').messages.where((m)=>!m.isUser),hasLength(1));
-    transport.response.complete(const AgentTurnResult(text:'One reply',agentRunId:'run-one'));
+    // A valid voice input is only successful with a playable voice response.
+    // Keep the mocked audio on the same request ID as the completion event.
+    transport.response.complete(AgentTurnResult(
+      text: 'One reply',
+      agentRunId: 'run-one',
+      audioBytes: Uint8List(960),
+      audioMimeType: 'audio/l16',
+      audioDurationMs: 20,
+    ));
     await send;
     final replies=controller.threadOf('character-1').messages.where((m)=>!m.isUser).toList();
     expect(replies,hasLength(1));
     expect(replies.single.requestId,transport.request);
     expect(replies.single.text,'One reply');
+    expect(replies.single.attachment?.kind,'voice');
   });
 }
