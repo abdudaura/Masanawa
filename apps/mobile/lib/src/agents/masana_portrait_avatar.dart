@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'agent_directory.dart';
 
-/// Curated offline vector portraits, keyed only by the server display label.
-/// These are **fictional AI character illustrations**, not photographs of
-/// licensed real-world professionals or a hard-coded contact directory.
-const _names = ["Mallam Gwani Bodi","Malamah Gwana Sulafat","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
+/// Archived fictional vector illustrations, intentionally NOT used as the
+/// owner's requested final photo portraits. Stable profile URLs are preferred;
+/// unknown or unavailable artwork renders neutral initials instead.
+const _names = ["Gwani","Gwana","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
 
 String? portraitAssetFor(String displayName){
  final index=_names.indexOf(displayName.trim());
@@ -25,8 +25,8 @@ class MasanaPortraitAvatar extends StatelessWidget{
   // The archived SVG illustrations were placeholders, not the owner's
   // original portraits. Do not present them as the final profile photos.
   Widget fallback()=>_initial(context);
-  // The directory's configured artwork is authoritative. Bundled illustrations
-  // remain available when there is no artwork or its download fails.
+  // Only the server's identity-bound artwork is authoritative; absent or
+  // failed URLs show initials rather than misrepresenting archived cartoons.
   final portrait=url==null||url.isEmpty?fallback():
     Uri.tryParse(url)?.path.toLowerCase().endsWith('.svg')==true?
       SvgPicture.network(url,width:size,height:size,fit:BoxFit.cover,
