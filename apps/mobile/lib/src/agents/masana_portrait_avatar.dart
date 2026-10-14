@@ -7,9 +7,12 @@ import 'agent_directory.dart';
 /// unknown or unavailable artwork renders neutral initials instead.
 const _names = ["Gwani","Gwana","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
 
+const _portraitKeys = ["gwani","gwana","amina","fatima","salim","zainab","sadiq","musa","bello","umar","safiya","ruqayya","idris","maryam","kabir","hauwa","yusuf","haruna","bilkisu","nura","aisha","abdulrahman","layla","grace","asha","mei"];
+
+/// The 26 names and keys follow the canonical Gateway seed roster exactly.
 String? portraitAssetFor(String displayName){
  final index=_names.indexOf(displayName.trim());
- return index<0?null:'assets/masana/avatars/portrait_${index.toString().padLeft(2,'0')}.svg';
+ return index<0?null:'assets/masana/portraits/${_portraitKeys[index]}.webp';
 }
 String? bannerAssetFor(String displayName){
  final index=_names.indexOf(displayName.trim());
@@ -22,11 +25,17 @@ class MasanaPortraitAvatar extends StatelessWidget{
  final double size;
  @override Widget build(BuildContext context){
   final url=agent.avatarUrl?.trim();
-  // The archived SVG illustrations were placeholders, not the owner's
-  // original portraits. Do not present them as the final profile photos.
-  Widget fallback()=>_initial(context);
-  // Only the server's identity-bound artwork is authoritative; absent or
-  // failed URLs show initials rather than misrepresenting archived cartoons.
+  // The bundled 384px generated photographs are offline-first and work
+  // before directory portrait hosting is configured. Admin-supplied URLs
+  // take precedence, but failures fall back to the matching local portrait.
+  final localAsset=portraitAssetFor(agent.displayName);
+  Widget fallback()=>localAsset==null
+    ? _initial(context)
+    : Image.asset(localAsset,width:size,height:size,fit:BoxFit.cover,
+        semanticLabel:'AI portrait of ${agent.displayName}',
+        errorBuilder:(_,_,_)=>_initial(context));
+  // A server-configured portrait overrides the bundled identity photo.
+  // Unknown/admin custom profiles never inherit another stock persona's face.
   final portrait=url==null||url.isEmpty?fallback():
     Uri.tryParse(url)?.path.toLowerCase().endsWith('.svg')==true?
       SvgPicture.network(url,width:size,height:size,fit:BoxFit.cover,
