@@ -703,7 +703,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         if (didPop) setState(() => _showEmoji = false);
       },
       child: Scaffold(
-        backgroundColor: u.chatBg,
+        backgroundColor: u.surfaceCard,
         appBar: AppBar(
           backgroundColor: u.surfaceCard,
           foregroundColor: u.textPrimary,
@@ -775,10 +775,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
           actions: [
             if (_selectedMessageIds.isEmpty && !_showSearch)
-              IconButton(
-                tooltip: 'Buy data bundle',
-                icon: const Icon(Icons.sim_card_outlined),
+              TextButton(
                 onPressed: () => context.push('/billing?service=data'),
+                child: Text('Data Bundles',
+                  style: TextStyle(color: u.brand, fontSize: 12,
+                    fontWeight: FontWeight.w700)),
               ),
             if (_selectedMessageIds.isNotEmpty) ...[
               IconButton(
