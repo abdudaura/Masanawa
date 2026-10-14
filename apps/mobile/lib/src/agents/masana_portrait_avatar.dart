@@ -21,9 +21,10 @@ class MasanaPortraitAvatar extends StatelessWidget{
  final AgentDirectoryEntry agent;
  final double size;
  @override Widget build(BuildContext context){
-  final asset=portraitAssetFor(agent.displayName),url=agent.avatarUrl?.trim();
-  Widget fallback()=>asset!=null?SvgPicture.asset(asset,width:size,height:size,
-    fit:BoxFit.cover,semanticsLabel:'AI portrait of ${agent.displayName}'):_initial(context);
+  final url=agent.avatarUrl?.trim();
+  // The archived SVG illustrations were placeholders, not the owner's
+  // original portraits. Do not present them as the final profile photos.
+  Widget fallback()=>_initial(context);
   // The directory's configured artwork is authoritative. Bundled illustrations
   // remain available when there is no artwork or its download fails.
   final portrait=url==null||url.isEmpty?fallback():
