@@ -4,8 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
+import 'package:masanawa/src/state/session_state.dart';
 
 import 'agent_recovery_test.dart' show RecoveringTransport;
+
+class _SignedOutTestSession extends SessionController {
+  @override
+  SessionState build() => const SessionSignedOut();
+}
 
 class _EmojiTransport extends RecoveringTransport {
   final delivered = <String>[];
@@ -31,6 +37,7 @@ void main() {
     final transport = _EmojiTransport();
     final container = ProviderContainer(overrides: [
       agentTransportProvider.overrideWithValue(transport),
+      sessionProvider.overrideWith(_SignedOutTestSession.new),
     ]);
     addTearDown(container.dispose);
     final chat = container.read(aiChatProvider.notifier);
