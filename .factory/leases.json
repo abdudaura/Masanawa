@@ -2174,8 +2174,25 @@
         "apps/mobile/lib/src/ui/components/voice_note_composer.dart",
         "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
         "apps/mobile/lib/src/screens/chat/components/paid_voice_quote_sheet.dart",
-        "apps/mobile/lib/src/features/videos/videos_screen.dart"
-      ]
+        "apps/mobile/lib/src/features/videos/videos_screen.dart",
+        "services/gateway/src/native_audio.ts",
+        "services/gateway/src/google_voice_catalog.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/live_voice_token.ts",
+        "services/gateway/src/platform_agent_bootstrap.ts",
+        "services/gateway/src/financial_billing.ts",
+        "services/gateway/src/billing_checkout.ts",
+        "services/gateway/src/agent_billing_assistant.ts",
+        "apps/mobile/lib/src/finance/crypto_wallet_screen.dart",
+        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
+        "apps/mobile/lib/src/screens/billing/billing_screen.dart",
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
+        "apps/mobile/lib/src/core/live_voice_session.dart",
+        "apps/mobile/lib/src/features/videos/video_models.dart",
+        "apps/mobile/pubspec.yaml"
+      ],
+      "notes": "Owner authorizes correcting all listed areas; explicit AF00 composition, AF01 data-only product restriction and AF05 native/voice expansion; preserve canonical financial data/contracts. No overlapping unexpired path claims found."
     }
   ],
   "history": [
