@@ -7,6 +7,7 @@ on:
       - "services/gateway/src/google_voice_catalog*"
       - "services/gateway/src/agent_conversation*"
       - "services/gateway/src/live_voice_token*"
+      - "services/gateway/src/paystack_dedicated_accounts*"
       - ".github/workflows/owner-mobile-acceptance.yml"
 permissions:
   contents: read
@@ -34,6 +35,7 @@ jobs:
           services/gateway/src/native_audio.test.ts
           services/gateway/src/google_voice_catalog.test.ts
           services/gateway/src/live_voice_token.test.ts
+          services/gateway/src/paystack_dedicated_accounts.test.ts
   flutter-full:
     runs-on: ubuntu-latest
     timeout-minutes: 45
