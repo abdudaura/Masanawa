@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "kind": "fictional-ai-portraits",
+  "portraits": [
+    {
+      "key": "gwani",
+      "displayName": "Gwani",
+      "asset": "assets/masana/portraits/gwani.webp"
+    },
+    {
+      "key": "gwana",
+      "displayName": "Gwana",
+      "asset": "assets/masana/portraits/gwana.webp"
+    },
+    {
+      "key": "amina",
+      "displayName": "Dr. Amina Yusuf",
+      "asset": "assets/masana/portraits/amina.webp"
+    },
+    {
+      "key": "fatima",
+      "displayName": "Nurse Fatima Abdullahi",
+      "asset": "assets/masana/portraits/fatima.webp"
+    },
+    {
+      "key": "salim",
+      "displayName": "Pharm. Salim Ibrahim",
+      "asset": "assets/masana/portraits/salim.webp"
+    },
+    {
+      "key": "zainab",
+      "displayName": "Barr. Zainab Bello",
+      "asset": "assets/masana/portraits/zainab.webp"
+    },
+    {
+      "key": "sadiq",
+      "displayName": "Prof. Sadiq Musa",
+      "asset": "assets/masana/portraits/sadiq.webp"
+    },
+    {
+      "key": "musa",
+      "displayName": "Engr. Musa Garba",
+      "asset": "assets/masana/portraits/musa.webp"
+    },
+    {
+      "key": "bello",
+      "displayName": "Engr. Bello Shehu",
+      "asset": "assets/masana/portraits/bello.webp"
+    },
+    {
+      "key": "umar",
+      "displayName": "Engr. Umar Lawal",
+      "asset": "assets/masana/portraits/umar.webp"
+    },
+    {
+      "key": "safiya",
+      "displayName": "Arc. Safiya Kabir",
+      "asset": "assets/masana/portraits/safiya.webp"
+    },
+    {
+      "key": "ruqayya",
+      "displayName": "Prof. Ruqayya Haruna",
+      "asset": "assets/masana/portraits/ruqayya.webp"
+    },
+    {
+      "key": "idris",
+      "displayName": "Dr. Idris Muhammad",
+      "asset": "assets/masana/portraits/idris.webp"
+    },
+    {
+      "key": "maryam",
+      "displayName": "Prof. Maryam Usman",
+      "asset": "assets/masana/portraits/maryam.webp"
+    },
+    {
+      "key": "kabir",
+      "displayName": "Dr. Kabir Ahmad",
+      "asset": "assets/masana/portraits/kabir.webp"
+    },
+    {
+      "key": "hauwa",
+      "displayName": "Prof. Hauwa Sani",
+      "asset": "assets/masana/portraits/hauwa.webp"
+    },
+    {
+      "key": "yusuf",
+      "displayName": "Dr. Yusuf Danladi",
+      "asset": "assets/masana/portraits/yusuf.webp"
+    },
+    {
+      "key": "haruna",
+      "displayName": "Prof. Haruna Adamu",
+      "asset": "assets/masana/portraits/haruna.webp"
+    },
+    {
+      "key": "bilkisu",
+      "displayName": "Dr. Bilkisu Suleiman",
+      "asset": "assets/masana/portraits/bilkisu.webp"
+    },
+    {
+      "key": "nura",
+      "displayName": "Dr. Nura Abdullahi",
+      "asset": "assets/masana/portraits/nura.webp"
+    },
+    {
+      "key": "aisha",
+      "displayName": "Dr. Aisha Tanko",
+      "asset": "assets/masana/portraits/aisha.webp"
+    },
+    {
+      "key": "abdulrahman",
+      "displayName": "Prof. Abdulrahman Isah",
+      "asset": "assets/masana/portraits/abdulrahman.webp"
+    },
+    {
+      "key": "layla",
+      "displayName": "Ustazah Layla Hassan",
+      "asset": "assets/masana/portraits/layla.webp"
+    },
+    {
+      "key": "grace",
+      "displayName": "Prof. Grace Okonkwo",
+      "asset": "assets/masana/portraits/grace.webp"
+    },
+    {
+      "key": "asha",
+      "displayName": "Madam Asha Verma",
+      "asset": "assets/masana/portraits/asha.webp"
+    },
+    {
+      "key": "mei",
+      "displayName": "Prof. Mei Lin",
+      "asset": "assets/masana/portraits/mei.webp"
+    }
+  ]
+}
