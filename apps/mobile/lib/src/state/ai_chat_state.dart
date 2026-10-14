@@ -1506,6 +1506,31 @@ class AiChatController extends Notifier<AiChatState> {
   }) async {
     if (_disposed) return;
     final thread = threadOf(characterId);
+    // The completion event can restore a reply before the HTTP response has
+    // finished rendering its audio. Both deliveries belong to one user turn.
+    final existingIndex = requestId == null ? -1 : thread.messages.indexWhere(
+      (message) => !message.isUser && message.requestId == requestId,
+    );
+    if (existingIndex >= 0) {
+      final messages = [...thread.messages];
+      final existing = messages[existingIndex];
+      messages[existingIndex] = existing.copyWith(
+        text: text,
+        parts: parts.isEmpty ? existing.parts : parts,
+        attachment: attachment ?? existing.attachment,
+        deliveryStatus: 'delivered',
+      );
+      state = state.copyWith(
+        threads: {...state.threads, characterId: thread.copyWith(
+          messages: messages,
+          agentRunId: agentRunId ?? thread.agentRunId,
+        )},
+        sendingIn: {...state.sendingIn}..remove(characterId),
+      );
+      _markUserMessages(characterId, {'delivered'}, 'read');
+      await _save();
+      return;
+    }
     final isOpen = state.openThreadId == characterId;
     final msg = AiChatMessage(
       id: _newId(),

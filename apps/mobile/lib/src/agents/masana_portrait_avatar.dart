@@ -21,15 +21,22 @@ class MasanaPortraitAvatar extends StatelessWidget{
  final AgentDirectoryEntry agent;
  final double size;
  @override Widget build(BuildContext context){
-  final asset=portraitAssetFor(agent.displayName),url=agent.avatarUrl;
-  return ClipOval(child: SizedBox(width:size,height:size,child:
-   asset!=null?SvgPicture.asset(asset,width:size,height:size,fit:BoxFit.cover,
-       semanticsLabel:'AI portrait of ${agent.displayName}'):
-   url!=null&&url.isNotEmpty?Image.network(url,width:size,height:size,
-       fit:BoxFit.cover,errorBuilder:(_,__,___)=>_initial()):
-   _initial()));
+  final asset=portraitAssetFor(agent.displayName),url=agent.avatarUrl?.trim();
+  Widget fallback()=>asset!=null?SvgPicture.asset(asset,width:size,height:size,
+    fit:BoxFit.cover,semanticsLabel:'AI portrait of ${agent.displayName}'):_initial();
+  // The directory's configured artwork is authoritative. Bundled illustrations
+  // remain available when there is no artwork or its download fails.
+  final portrait=url==null||url.isEmpty?fallback():
+    Uri.tryParse(url)?.path.toLowerCase().endsWith('.svg')==true?
+      SvgPicture.network(url,width:size,height:size,fit:BoxFit.cover,
+        semanticsLabel:'AI portrait of ${agent.displayName}',
+        placeholderBuilder:(_)=>fallback(),errorBuilder:(_,_,_)=>fallback()):
+      Image.network(url,width:size,height:size,fit:BoxFit.cover,
+        semanticLabel:'AI portrait of ${agent.displayName}',
+        errorBuilder:(_,_,_)=>fallback());
+  return ClipOval(child:SizedBox(width:size,height:size,child:portrait));
  }
- Widget _initial()=>ColoredBox(color:const Color(0xFF1E63D6),
+ Widget _initial()=>ColoredBox(color:const Color(0xFF075E54),
     child:Center(child:Text(agent.initial,style:TextStyle(
       color:Colors.white,fontSize:size*.37,fontWeight:FontWeight.bold))));
 }
