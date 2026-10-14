@@ -441,9 +441,10 @@ class _CryptoWalletScreenState extends ConsumerState<CryptoWalletScreen> {
             children: [
               if (widget.embeddedInWallet)
                 Row(children: [
-                  Text('Crypto assets',
-                    style: Theme.of(context).textTheme.titleMedium),
-                  const Spacer(),
+                  Expanded(child: Text(
+                    'Crypto assets', maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  )),
                   IconButton(
                     tooltip: 'Refresh crypto balances',
                     onPressed: _busy ? null : _refreshWallet,
