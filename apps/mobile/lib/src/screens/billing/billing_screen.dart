@@ -18,7 +18,7 @@ BillCategory? billingCategoryForHomeService(
   String? service,
 ) {
   // Retired bill types do not reopen a checkout through a legacy deep link.
-  if (service != null && service.toLowerCase() != 'data') return null;
+  if (service?.trim().toLowerCase() != 'data') return null;
   for (final category in categories) {
     if (isDataBundleBillCategory(category)) return category;
   }
