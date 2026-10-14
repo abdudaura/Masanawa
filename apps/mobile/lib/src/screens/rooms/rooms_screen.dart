@@ -190,6 +190,7 @@ class RoomsScreen extends ConsumerWidget {
         ),
         savedLessonsAccountKey: ownerAccount,
         teacherNames: teacherNames,
+        viewerId: ownerAccount,
       ),
     );
   }
@@ -235,6 +236,7 @@ class MasanaRoomDetailScreen extends ConsumerWidget {
           dio:api.dio,accountKey:accountId,currentAccountKey:currentAccount),
         savedLessonsAccountKey:accountId,
         teacherNames:teacherNames,
+        viewerId:accountId,
       ),
     );
   }
