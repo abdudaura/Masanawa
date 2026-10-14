@@ -21,6 +21,17 @@ void main(){
   expect((tester.widget<Image>(find.byType(Image)).image as AssetImage).assetName,
     'assets/masana/portraits/gwani.webp');
  });
+ testWidgets('old online SVG illustration cannot override approved stock photo', (tester) async {
+  const agent=AgentDirectoryEntry(characterId:'gwani',characterVersionId:'v1',
+    displayName:'Gwani',roleLabel:'Support',about:'',
+    presence:AgentPresence.unknown,
+    avatarUrl:'https://old.example.com/masana/avatars/portrait_00.svg');
+  await tester.pumpWidget(const MaterialApp(home:Scaffold(
+    body:MasanaPortraitAvatar(agent:agent))));
+  expect(find.byType(SvgPicture),findsNothing);
+  expect((tester.widget<Image>(find.byType(Image)).image as AssetImage).assetName,
+    'assets/masana/portraits/gwani.webp');
+ });
  test('all 26 real bundled photos are present alongside existing banners',()async{
   const names=["Gwani","Gwana","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
   expect(names.length,26);
