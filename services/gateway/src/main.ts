@@ -2531,6 +2531,14 @@ export async function startGatewayService(
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
+      ...(!composedBillingWallet && billingCustomerAuthorizer && database.ngnWallet
+        ? { ngnReadOnlyBalance: async (header: string | undefined) => {
+            const identity = await billingCustomerAuthorizer!.authorize({
+              authorizationHeader: header,
+            });
+            return database.ngnWallet!.readBalance(identity);
+          } }
+        : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(composedCustomerChannels
         ? { customerChannels: composedCustomerChannels }
