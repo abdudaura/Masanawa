@@ -18,6 +18,7 @@ import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
 import 'masana_profile_screen.dart';
+import 'components/paid_voice_quote_sheet.dart';
 import '../../agents/masana_portrait_avatar.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/cafe_suggestions.dart';
@@ -1428,25 +1429,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       expectedSeconds: 5 * 60,
     );
     if (quote == null || !mounted) return (false, null, null);
-    final accepted = await showDialog<bool>(
+    final accepted = await showModalBottomSheet<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Voice with ${agent.displayName}'),
-        content: Text(
-          quote.isTrial
-              ? 'Your ${quote.trialDurationDays}-day voice trial covers this live conversation.'
-              : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified live time is charged.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Not now'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(quote.isTrial ? 'Start voice' : 'Accept & start'),
-          ),
-        ],
+      isScrollControlled: true,
+      showDragHandle: false,
+      builder: (sheetContext) => PaidVoiceQuoteSheet(
+        quote: quote,
+        onContinue: () => Navigator.of(sheetContext).pop(true),
       ),
     );
     if (accepted != true) return (false, null, null);
@@ -1754,25 +1743,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (quote != null) {
         estimatedSeconds = quote.estimatedSeconds;
         if (!mounted) return;
-        final accepted = await showDialog<bool>(
+        final accepted = await showModalBottomSheet<bool>(
           context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text('Voice with ${agent.displayName}'),
-            content: Text(
-              quote.isTrial
-                  ? 'Your ${quote.trialDurationDays}-day voice trial covers this call. You will not be charged for trial usage.'
-                  : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified call time is charged and unused Credits are returned.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Not now'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(quote.isTrial ? 'Start trial call' : 'Accept & call'),
-              ),
-            ],
+          isScrollControlled: true,
+          showDragHandle: false,
+          builder: (sheetContext) => PaidVoiceQuoteSheet(
+            quote: quote,
+            onContinue: () => Navigator.of(sheetContext).pop(true),
           ),
         );
         if (accepted != true) return;
