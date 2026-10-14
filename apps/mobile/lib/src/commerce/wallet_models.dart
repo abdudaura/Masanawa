@@ -75,6 +75,7 @@ class WalletView {
     required this.pendingEarningsCredits,
     required this.availableEarningsCredits,
     required this.ngnBalanceKobo,
+    this.ngnBalanceAvailable = true,
     required this.entries,
   });
 
@@ -82,9 +83,11 @@ class WalletView {
   final int pendingEarningsCredits;
   final int availableEarningsCredits;
   final int ngnBalanceKobo;
+  final bool ngnBalanceAvailable;
   final List<WalletEntry> entries;
 
   String get ngnBalanceLabel {
+    if (!ngnBalanceAvailable) return 'Balance unavailable';
     final naira = ngnBalanceKobo ~/ 100;
     final kobo = (ngnBalanceKobo % 100).toString().padLeft(2, '0');
     return '₦$naira.$kobo';
@@ -104,6 +107,8 @@ class WalletView {
       spendableCredits: credits('spendableCredits'),
       pendingEarningsCredits: credits('pendingEarningsCredits'),
       availableEarningsCredits: credits('availableEarningsCredits'),
+      ngnBalanceAvailable: json['ngnBalanceKobo'] is num &&
+          (json['ngnBalanceKobo'] as num) >= 0,
       ngnBalanceKobo: (json['ngnBalanceKobo'] is num &&
               (json['ngnBalanceKobo'] as num) >= 0)
           ? (json['ngnBalanceKobo'] as num).toInt()
