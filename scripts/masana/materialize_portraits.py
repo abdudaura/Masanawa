@@ -40,7 +40,7 @@ KEYS = [
     ("asha", "Madam Asha Verma"),
     ("mei", "Prof. Mei Lin"),
 ]
-N_PARTS = 1
+N_PARTS = 4
 SIZE = 96
 
 def main() -> None:
