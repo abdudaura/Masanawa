@@ -2031,6 +2031,7 @@
       "heartbeat_at": "2026-10-14T04:40:46.303290Z",
       "expires_at": "2026-10-14T06:40:46.303290Z",
       "paths": [
+        ".github/workflows/mobile-build.yml",
         "apps/mobile/android/app/src/main/res/drawable-hdpi/android12splash.png",
         "apps/mobile/android/app/src/main/res/drawable-hdpi/ic_launcher_foreground.png",
         "apps/mobile/android/app/src/main/res/drawable-hdpi/splash.png",
@@ -2120,6 +2121,7 @@
         "apps/mobile/lib/src/ui/components/phone_field.dart",
         "apps/mobile/pubspec.lock",
         "apps/mobile/pubspec.yaml",
+        "apps/mobile/scripts/build_production_apk.ps1",
         "apps/mobile/test/country_codes_test.dart",
         "apps/mobile/test/localization/language_picker_button_test.dart",
         "apps/mobile/test/localization/locale_preference_test.dart",
@@ -2144,7 +2146,7 @@
         "services/gateway/src/customer_auth.ts"
       ],
       "scope": "Owner-reported registration, country input, language selector and simple launcher artwork; consumer app only",
-      "notes": "No overlapping unreleased claim found. Preserve server OTP authorization and Firebase configuration. Owner requested OTP email template branding update; use existing green palette and remove rejected blue/M artwork. Retain OTP delivery/auth security."
+      "notes": "No overlapping unreleased claim found. Preserve server OTP authorization and Firebase configuration. Owner requested OTP email template branding update; use existing green palette and remove rejected blue/M artwork. Retain OTP delivery/auth security. Narrow build-origin alignment: Windows build script and general Mobile Build still override the new Gateway with its retired origin. Preserve all checks/signing."
     }
   ],
   "history": [
