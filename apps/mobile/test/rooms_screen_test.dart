@@ -92,7 +92,7 @@ Future<ProviderContainer> _mount(WidgetTester tester, _Rooms rooms) async {
 }
 
 void main() {
-  testWidgets('canonical Rooms can discover, join, and read actual lessons', (tester) async {
+  testWidgets('canonical Rooms open a single chat without lesson tabs', (tester) async {
     final rooms = _Rooms();
     await _mount(tester, rooms);
     expect(find.text('Mathematics'), findsOneWidget);
@@ -100,11 +100,15 @@ void main() {
     expect(find.text('Create Room'), findsNothing);
     await tester.tap(find.text('Mathematics'));
     await tester.pumpAndSettle();
-    expect(find.text('Join free Room'), findsOneWidget);
-    await tester.tap(find.text('Join free Room'));
+    expect(find.text('Join Room'), findsOneWidget);
+    await tester.tap(find.text('Join Room'));
     await tester.pumpAndSettle();
     expect(rooms.joins, 1);
-    expect(find.text('Introduction to algebra'), findsOneWidget);
+    expect(find.text('Start a conversation with your Masana teacher.'), findsOneWidget);
+    expect(find.text('Data Bundles'), findsOneWidget);
+    expect(find.text('Lessons'), findsNothing);
+    expect(find.text('Questions'), findsNothing);
+    expect(find.text('Discussion'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -147,7 +151,7 @@ void main() {
     expect(find.text('Introduction to algebra'), findsOneWidget);
     (container.read(sessionProvider.notifier) as _Session).switchTo('fan-b');
     await tester.pumpAndSettle();
-    expect(find.text('Introduction to algebra'), findsNothing);
+    expect(find.text('Start a conversation with your Masana teacher.'), findsNothing);
     expect(find.text('Session changed. Sign in to view this Room.'),
         findsOneWidget);
     expect(tester.takeException(), isNull);
