@@ -30,26 +30,17 @@ void main() {
     ),
   ];
 
-  test('Home quick-service intents select the matching billing category', () {
+  test('only the data bundle intent is still available', () {
     expect(
       billingCategoryForHomeService(categories, 'data')?.code,
       'MOBILE_DATA',
     );
-    expect(
-      billingCategoryForHomeService(categories, 'airtime')?.code,
-      'AIRTIME',
-    );
-    expect(
-      billingCategoryForHomeService(categories, 'electricity')?.code,
-      'ELECTRICITY',
-    );
-    expect(
-      billingCategoryForHomeService(categories, 'tv')?.code,
-      'CABLE_TV',
-    );
+    expect(billingCategoryForHomeService(categories, 'airtime'), isNull);
+    expect(billingCategoryForHomeService(categories, 'electricity'), isNull);
+    expect(billingCategoryForHomeService(categories, 'tv'), isNull);
   });
 
-  test('unknown Home service does not guess a billing category', () {
+  test('missing or unknown Home service cannot silently open a bill purchase', () {
     expect(billingCategoryForHomeService(categories, 'unknown'), isNull);
     expect(billingCategoryForHomeService(categories, null), isNull);
   });
