@@ -15,7 +15,8 @@ const parsePreview=(r:any):RoomPreview=>({
 });
 const parseQuestion=(r:any):RoomQuestion=>({
  questionId:r.question_id,roomId:r.room_id,body:r.body,state:r.state==="needs_staff"?"queued":r.state,
- queuedAt:new Date(r.queued_at).toISOString(),answer:r.answer||null
+ queuedAt:new Date(r.queued_at).toISOString(),answer:r.answer||null,
+ authorUserId:typeof r.user_id==='string'?r.user_id:undefined
 });
 async function transaction<T>(pool:Pool, fn:(client:PoolClient)=>Promise<T>):Promise<T>{
  const client=await pool.connect();try{
@@ -124,7 +125,7 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    return transaction(pool,async q=>{
      const room=await lookupRoom(q,a.tenantId,id);
      await requirePublishedEligible(q,a,room);await requireMember(q,a,id,true);
-     const duplicate=await q.query(`SELECT question_id,room_id,body,state,queued_at,NULL::text AS answer
+     const duplicate=await q.query(`SELECT question_id,room_id,user_id,body,state,queued_at,NULL::text AS answer
        FROM rooms.questions WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3 AND idempotency_key=$4`,
        [a.tenantId,id,userId,key]);
      if(duplicate.rows.length){
@@ -139,13 +140,13 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
        (outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload)
        VALUES ($1,$2,$3,'rooms.question.queued',1,'room_question',$4,$5,'rooms.teacher',jsonb_build_object('roomId',$6::text,'questionId',$4::text))`,
        [newId("outbox-event_"),a.tenantId,eid,questionId,correlation,id]);
-     return {questionId,roomId:id,body,state:"queued" as const,queuedAt:new Date().toISOString(),answer:null};
+     return {questionId,roomId:id,body,state:"queued" as const,queuedAt:new Date().toISOString(),answer:null,authorUserId:userId};
    });
  },
  async questions(a,id){
    assertRoom(id);const room=await lookupRoom(pool,a.tenantId,id);await requirePublishedEligible(pool,a,room);
    await requireMember(pool,a,id);
-   const res=await pool.query(`SELECT q.question_id,q.room_id,q.body,q.state,q.queued_at,
+   const res=await pool.query(`SELECT q.question_id,q.room_id,q.user_id,q.body,q.state,q.queued_at,
      CASE WHEN ans.state='approved' THEN ans.body ELSE NULL END AS answer
      FROM rooms.questions q LEFT JOIN rooms.answers ans
      ON ans.tenant_id=q.tenant_id AND ans.question_id=q.question_id
