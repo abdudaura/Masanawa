@@ -23,7 +23,7 @@ String roomError(Object e){
  return 'Could not load. Check the network and retry.';
 }
 class RoomsScreen extends StatefulWidget {
- const RoomsScreen({super.key,required this.client,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey,this.membershipClient,this.protectDetail,this.teacherNames = const {}});
+ const RoomsScreen({super.key,required this.client,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey,this.membershipClient,this.protectDetail,this.teacherNames = const {},this.viewerId});
  final RoomsClient client;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
@@ -220,6 +220,7 @@ class _RoomsScreenState extends State<RoomsScreen>{
                                             membershipClient:
                                                 widget.membershipClient,
                                             teacherNames: widget.teacherNames,
+                                            viewerId: widget.viewerId,
                                           );
                                           return widget.protectDetail
                                               ?.call(routeContext, detail) ?? detail;
@@ -248,7 +249,7 @@ class RoomHomeScreen extends StatefulWidget {
  const RoomHomeScreen({super.key,required this.client,required this.id,
   this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,
   this.savedLessonsClient,this.savedLessonsAccountKey,this.membershipClient,
-  this.teacherNames = const {}});
+  this.teacherNames = const {},this.viewerId});
  final RoomsClient client; final String id;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
@@ -257,6 +258,7 @@ class RoomHomeScreen extends StatefulWidget {
  final String? savedLessonsAccountKey;
  final RoomMembershipClient? membershipClient;
  final Map<String,String> teacherNames;
+ final String? viewerId;
  @override State<RoomHomeScreen> createState()=>_RoomHomeScreenState();
 }
 
@@ -300,7 +302,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
   try{
    final fresh=await widget.client.questions(roomId);
    if(!mounted || version!=_version || roomId!=widget.id)return;
-   setState(()=>messages=fresh);
+   setState(()=>messages=fresh.reversed.toList());
   }on DioException catch(e){
    if(mounted && version==_version && e.response?.statusCode==403){
     setState(()=>accessBlocked=true);
@@ -327,7 +329,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
    }
    if(!mounted || version!=_version || roomId!=widget.id)return;
    setState((){
-    info=room;messages=next;accessBlocked=blocked;loading=false;
+    info=room;messages=next.reversed.toList();accessBlocked=blocked;loading=false;
    });
    schedulePoll();
   }catch(e){
@@ -459,6 +461,8 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
             textAlign:TextAlign.center));
          final message=messages[index~/2];
          final fromTeacher=index.isOdd;
+         final ownMessage=widget.viewerId!=null &&
+             message.authorUserId==widget.viewerId;
          if(fromTeacher && (message.answer==null || message.answer!.isEmpty)){
           return Align(alignment:Alignment.centerLeft,
            child:Padding(padding:const EdgeInsets.symmetric(vertical:5),
@@ -466,16 +470,21 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
                style:Theme.of(ctx).textTheme.bodySmall)));
          }
          return Align(
-          alignment:fromTeacher?Alignment.centerLeft:Alignment.centerRight,
+          alignment:fromTeacher || !ownMessage
+              ? Alignment.centerLeft : Alignment.centerRight,
           child:ConstrainedBox(constraints:BoxConstraints(
             maxWidth:MediaQuery.sizeOf(ctx).width*.82),
             child:Card(
-             color:fromTeacher?color.surface:color.primaryContainer,
+             color:fromTeacher || !ownMessage
+                ? color.surface : color.primaryContainer,
              margin:const EdgeInsets.symmetric(vertical:4),
              child:Padding(padding:const EdgeInsets.symmetric(
                horizontal:12,vertical:9),
                child:Column(crossAxisAlignment:CrossAxisAlignment.start,
                 children:[
+                 if(!fromTeacher && !ownMessage)
+                   Text('Room member',style:TextStyle(
+                     color:color.primary,fontSize:11,fontWeight:FontWeight.w700)),
                  if(fromTeacher)Text(teacherLabel(room),
                    style:TextStyle(color:color.primary,
                      fontWeight:FontWeight.w700,fontSize:11)),
