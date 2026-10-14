@@ -1,0 +1,52 @@
+name: Owner Mobile Corrections Acceptance
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "services/gateway/src/native_audio*"
+      - "services/gateway/src/google_voice_catalog*"
+      - "services/gateway/src/agent_conversation*"
+      - "services/gateway/src/live_voice_token*"
+      - ".github/workflows/owner-mobile-acceptance.yml"
+permissions:
+  contents: read
+jobs:
+  gateway-voice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Compile production Gateway
+        run: pnpm --filter @masanawa/gateway-service... build
+      - name: Verify voice catalog, playback and trial token contracts
+        run: >-
+          pnpm exec vitest run
+          services/gateway/src/native_audio.test.ts
+          services/gateway/src/google_voice_catalog.test.ts
+          services/gateway/src/live_voice_token.test.ts
+  flutter-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          cache: true
+      - name: Install
+        run: flutter pub get
+      - name: Full Flutter regression suite (including Talk Sponsor/Add AI)
+        run: flutter test --no-pub --reporter expanded
