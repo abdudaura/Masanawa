@@ -556,7 +556,7 @@ class AiChatController extends Notifier<AiChatState> {
     for (final message in thread.messages.where(
       (m) => m.isUser &&
           m.requestId != null &&
-          {'sending', 'uploading', 'queued', 'processing', 'failed'}
+          {'sending', 'sent', 'uploading', 'queued', 'processing', 'failed'}
                .contains(m.deliveryStatus),
     )) {
       try {
