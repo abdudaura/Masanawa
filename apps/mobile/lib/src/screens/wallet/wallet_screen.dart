@@ -105,7 +105,7 @@ class WalletScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: embeddedInShell ? null : masanawaMainHeader(context),
       body: Column(children: [
         const TabBar(
