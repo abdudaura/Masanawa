@@ -123,3 +123,36 @@ This section supersedes the old "Immediate next action" checkpoint above. **Pres
 2. Exercise Google /v1beta/voices using an authorized server-side credential (never copy or reveal it) to confirm Bodi male, Fola female, and 26 genuinely distinct usable IDs; prove authenticated voice and Start Trial end to end on a device where provider access exists.
 3. Verify full 17 owner items **as behaviors**, including media gestures, account switch cleanup, distinct portraits, Rooms searching, finance product restrictions and one playable reply for each voice turn. Source/widget tests are insufficient for handset and provider claims.
 4. If qualified, upload precisely the matching new version APK as a ZIP container to phone-accessible HTTPS via controlled artifact transfer, verify GET/HEAD and expiry, then merge tested compatible changes to main through PR with reconciled file claims and branch policies. If not qualified, leave PR draft and state exact blockers.
+
+
+## Verified continuation results — later 14 October 2026
+
+**App release candidate and delivery**
+- **New app version:** `1.0.3+4` (Android `versionName=1.0.3`, `versionCode=4`, package `ng.unigeria.unigeria`).
+- **Latest APK built and signature-tested** by Masana Android APK Compilation run `38537077391` from owner branch at source `a79bedb39bc445cfc1ccc909c39c714680ac6082` (GitHub PR synthetic checkout `f6467a8a7b3db00814d2790e616b2d13a834785b`): GitHub artifact `11881670418` (expires `2026-10-21T08:52:20Z`); contains `app-release.apk` and `BUILD-PROVENANCE.txt`.
+- SHA-256 of actual **latest APK bytes**, extracted and checked: `e437303834c1f684d8a0f70fa1c247c352c6f81c1ec8aa45c0dd6807ea11e77c`; ZIP integrity verified. Backend API + agent origins recorded as `https://masanawa-gateway-production-338f.up.railway.app`. `apksigner`: Android v2 signature valid; current certificate SHA-256 `080f320ac997d59d23008f2ddc158080dd91e92304400a9c2c63eeecc1c45865`.
+- This CI has **no persistent release keystore configured**: runner generated debug signing certificates differ between jobs. Previous successfully signed candidate at source `f779f5f` had certificate fingerprint `a1b8d6106e29ad056b924ae03a0ac8c3b302707ef589b79cc3b72246fb0fb3e9`, incompatible with the latest certificate. Handset users must back up local data before any required uninstall; do not call this Play Store production signing.
+- An actual download from GitHub Actions was mounted and extracted in the ChatGPT file runtime; the user was offered working **conversation-backed file links** to `masanawa-1.0.3-build4-latest-20261014.apk` and `masanawa-1.0.3-build4-talk-fix-verified.zip`. An independent permanent external HTTPS host and installation on the user's handset remain **NOT VERIFIED**. Do not invent a public URL or claim on-device validation.
+- CI trial `38536391517` had **749 passed / 2 failed** in Talk (two unavailable mock fixtures). `a79bedb` corrected the mock; CI `38537077478` completed **751 Flutter tests passed, 0 failures** and Gateway voice job passed. Later source-only tests `dad4e9f` (delete unused Flutter test import) and `080aef9` (import `TalkId` from owning module) were committed after that APK; no app executable files changed since the successful APK build. Corresponding focused AF01 Wallet Credit Send run `38538193462` passed both Flutter and Gateway/Postgres after lint correction. Earlier `a79bedb` workflows also passed voice note, roster, Rooms recovery, authenticated Chats, and communications regression.
+- Foundation CI after `080aef9` now gets **past `packages/agents`**, exposes two separate PostgreSQL test typecheck failures: absent `../commerce/isolated-test-database.js` in `src/home_feed/feed.integration.test.ts` and UUID template-string type mismatch in `src/identity/account-deletion-access.integration.test.ts`. Full Mobile Build still fails whole-project analyzer, and Status Video Integration strict typecheck still fails dozens of older dependency and unrelated Talk test errors. Preserve accurate status; do not disable checks to claim release.
+
+**Acceptance evidence status by owner item** (source-level acceptance vs actual external validation deliberately separate):
+1. Twenty-six indexed vector portraits and banners confirmed and roster tests pass. These are bundled fictional SVG drawings, **not independently verified as the user's 26 originally generated images**. Real rendered handset originality review remains.
+2. Distinct Masana list/chat/profile code and passing Flutter suite; real server artwork/account-auth display requires device confirmation.
+3. Compact Start Trial quote and call admit code/test boundaries present; actual Google Live token, provider WebSocket, end-to-end microphone/audio, retries and carrier behavior **unverified** on production (deployed main predates branch).
+4. Inline recorder gesture, lock, preview, cancel and lifecycle/account fencing tests pass; physical swipe/hold/touch + Android microphone lifecycle still require device checks.
+5. Audio send/outbox state exists and relevant widget tests pass; actual provider audio round-trip not measured.
+6. WAV wrapper implemented and Gateway tests passed. Flutter playback adapter accepts valid WAV and own tests pass; no actual phone audio measurement.
+7. The official Google extended-voice catalog selector exists with Bodi/Fola metadata matching and distinct 26 assignments in mocked tests; **real authenticated provider catalog, free-tier entitlement and voice audible acceptance UNVERIFIED**.
+8. Rooms search and hierarchy covered by source and widget tests; deployed membership gates/offline user experience still require real accounts.
+9. Masana search and card action cleanup present and tests pass, pending handset.
+10. Composer-adjacent attachment UI is implemented, but real authenticated file/photo/video sends not proven against the deployed backend.
+11. Emoji picker and Unicode transport tests pass at source level; handset renderer/manual combination emoji tests pending.
+12. New billing purchases are fenced to verified mobile data bundles at app and Gateway per preserved branch; historical reconciliation remains. Real provider-backed safe purchase tests pending, do not enable unrelated billers.
+13. Data header entry and Wallet navigation implemented; widget tests pass, device navigation pending.
+14. Wallet/Crypto unified screen and account-fencing contract tests pass; provider cash/crypto settlement end-to-end still unverified. MSN monetary gates stay OFF.
+15. Removed broad video filter chips / retained meaningful sort in branch; video provider/playback acceptance pending.
+16. One-reply-per-voice-turn state machine covered by focused unit tests; end-to-end under retries/network interruptions pending.
+17. Source test acceptance green, APK compiled/verified and delivered via chat attachments; persistent signing, permanent public HTTPS, physical install, catalog/provider and live production activation remain unqualified. **PR #738 must stay draft/unmerged until release gates are met.**
+
+**Fresh checkpoint:** latest known source commit at this paragraph: `080aef9d5b713bec78021dbf6ae0f4d7e3b810cc`, plus this append. Reconcile current remote head and CI before continuing. Absolutely do not reuse the older 1.0.2+3 APK or overwrite owner changes.
