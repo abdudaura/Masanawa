@@ -55,6 +55,7 @@ export async function ensureDefaultPlatformAgents(input:Readonly<{
  presentations:AgentPresentationRepository;profiles:PlatformAgentProfileRepository;
  skillAssignments:CharacterSkillAssignmentRepository;
  skillDistribution:SkillDistributionRepository;now?:()=>Instant;
+ voiceAssignments?:ReadonlyMap<string,string>;
 }>):Promise<PlatformAgentBootstrapResult>{
  const now=input.now?.()??nowInstant();
  const all=[...(await input.presentations.listAll({tenantId:input.tenantId}))];
@@ -138,8 +139,13 @@ export async function ensureDefaultPlatformAgents(input:Readonly<{
        schemaVersion:1,tenantId:input.tenantId,
        characterId:presentation.characterId,supportAgent:seed.supportAgent,
        defaultForNewUsers:seed.key==="gwani",
-       voiceProvider:"gemini",voiceName:seed.voiceName,revision:1,
+       voiceProvider:"gemini",voiceName:input.voiceAssignments?.get(seed.displayName)??seed.voiceName,revision:1,
      }});
+     changed=true;
+   }
+   const assignedVoice=input.voiceAssignments?.get(seed.displayName);
+   if(profile && assignedVoice && profile.voiceName!==assignedVoice){
+     await input.profiles.put({expectedRevision:profile.revision,profile:{...profile,voiceProvider:"gemini",voiceName:assignedVoice,revision:profile.revision+1}});
      changed=true;
    }
    catalog.push(Object.freeze({seed,characterId:presentation.characterId}));

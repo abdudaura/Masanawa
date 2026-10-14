@@ -16,11 +16,12 @@ final voiceNoteRecorderFactoryProvider = Provider<VoiceNoteRecorder Function()>(
 /// starts a live call. The parent owns the authenticated send boundary.
 class VoiceNoteComposer extends StatefulWidget {
   const VoiceNoteComposer({super.key, required this.recorder,
-    required this.isOwnerCurrent, required this.onSend, this.previewPlayer});
+    required this.isOwnerCurrent, required this.onSend, this.previewPlayer, this.onDismiss});
   final VoiceNoteRecorder recorder;
   final bool Function() isOwnerCurrent;
   final Future<bool> Function(ChatAttachment) onSend;
   final AudioPlayer? previewPlayer;
+  final VoidCallback? onDismiss;
   @override State<VoiceNoteComposer> createState() => _VoiceNoteComposerState();
 }
 
@@ -107,7 +108,7 @@ class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
         return;
       }
       widget.recorder.retain();
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) { if(widget.onDismiss != null) { widget.onDismiss!(); } else { Navigator.of(context).pop(); } }
     } catch (failure) {
       if (mounted) setState(() => _error = audioFailureMessage(failure, fallback: 'The voice note could not be sent. Please try again.'));
     } finally {
@@ -118,7 +119,7 @@ class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
   Future<void> _cancel() async {
     await _stopPreview();
     await widget.recorder.cancel();
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) { if(widget.onDismiss != null) { widget.onDismiss!(); } else { Navigator.of(context).pop(); } }
   }
 
   @override Widget build(BuildContext context) {
@@ -133,17 +134,17 @@ class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
         final seconds = recorder.elapsed.inSeconds;
         final message = _error ?? recorder.error;
         return Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.mic, size: 36, color: recording ? colors.emergency : colors.brandStrong),
-          const SizedBox(height: 12),
+          Icon(Icons.mic, size: 20, color: recording ? colors.emergency : colors.brandStrong),
+          const SizedBox(height: 4),
           Text(recording ? 'Recording voice note' : ready ? 'Voice note ready' : busy ? 'Starting recording…' : 'Voice note',
-            textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+            textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
           Text('${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
-            style: TextStyle(color: colors.textPrimary, fontSize: 24)),
+            style: TextStyle(color: colors.textPrimary, fontSize: 18)),
           if (message != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(message, textAlign: TextAlign.center)),
           if (busy) const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
           Wrap(alignment: WrapAlignment.center, spacing: 12, runSpacing: 8, children: [
             TextButton(onPressed: _sending ? null : _cancel, child: const Text('Cancel')),
             if (recording) OutlinedButton(onPressed: busy ? null : () => unawaited(recorder.stop()), child: const Text('Stop')),

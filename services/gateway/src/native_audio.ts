@@ -9,6 +9,7 @@ export interface NativeAudioRenderer {
     text: string,
     signal?: AbortSignal,
     onPcmChunk?: (chunk: Buffer) => void | Promise<void>,
+    persona?: {displayName:string;roleLabel:string},
   ): Promise<NativeAudioRenderResult>;
 }
 
@@ -80,6 +81,7 @@ export function createGeminiLiveAudioRenderer(input: {
   readonly model: string;
   readonly voiceName: string;
   readonly fetchImpl?: typeof fetch;
+  readonly resolveVoice?: (displayName:string)=>Promise<string>;
 }): NativeAudioRenderer {
   const apiKey = input.apiKey.trim();
   const model = input.model.trim();
@@ -90,31 +92,20 @@ export function createGeminiLiveAudioRenderer(input: {
   const fetchImpl = input.fetchImpl ?? fetch;
 
   const renderer: NativeAudioRenderer = {
-    async render(text, signal, onPcmChunk) {
+    async render(text, signal, onPcmChunk, persona) {
       const prompt = text.trim();
       if (!prompt || prompt.length > 32_000) {
         throw new RangeError("Native audio text is invalid");
       }
 
-      const response = await fetchImpl(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: "POST",
-          ...(signal ? { signal } : {}),
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseModalities: ["AUDIO"],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName },
-                },
-              },
-            },
-          }),
-        },
-      );
+      const selectedVoice=persona && input.resolveVoice ? await input.resolveVoice(persona.displayName) : voiceName;
+      const response = await fetchImpl('https://generativelanguage.googleapis.com/v1beta/interactions', {
+        method:'POST', signal: signal ?? AbortSignal.timeout(45000),
+        headers:{'content-type':'application/json','x-goog-api-key':apiKey},
+        body:JSON.stringify({model:model.includes('live')?'gemini-3.8-flash-tts':model,
+          input:[{type:'user_input',content:[{type:'text',text:prompt,annotations:[{type:'speech_metadata',style:`Warm, clear, natural conversational delivery${persona ? ` suited to a ${persona.roleLabel} educator` : ''}. Read only the supplied transcript.`}]}]}],
+          response_format:{type:'audio'},generation_config:{speech_config:[{voice:selectedVoice}]}}),
+      });
       if (!response.ok) {
         throw new Error(`Gemini native audio request failed with ${response.status}`);
       }

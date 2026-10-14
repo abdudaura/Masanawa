@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'rooms_client.dart';
 import 'saved_lessons_client.dart';
 import 'saved_lessons_screen.dart';
-const masanaBlue=Color(0xFF1E63D6);
+const masanaBlue=Color(0xFF075E54);
 
 /// Host session must guard details pushed beyond the account-keyed tab.
 typedef RoomDetailProtector = Widget Function(BuildContext routeContext, Widget detail);
@@ -53,11 +53,11 @@ class _RoomsScreenState extends State<RoomsScreen>{
   appBar:AppBar(title:const Text('Rooms'),backgroundColor:Colors.white,foregroundColor:Colors.black87),
   body:Column(children:[
    Padding(padding:const EdgeInsets.all(12),child:TextField(
-    decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Search professions'),
+    decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Search rooms, topics or hosts'),
     onChanged:(v){query=v;++_loadVersion;_searchDebounce?.cancel();
      _searchDebounce=Timer(const Duration(milliseconds:300),load);},
     onSubmitted:(v){_searchDebounce?.cancel();query=v;load();})),
-   Row(children:[
+   Padding(padding: const EdgeInsets.symmetric(horizontal:16), child: Row(children:[
     ChoiceChip(label:const Text('Discover'),selected:!joined,onSelected:(_){joined=false;load();}),
     const SizedBox(width:8),
     ChoiceChip(label:const Text('Joined'),selected:joined,onSelected:(_){joined=true;load();}),
@@ -67,7 +67,7 @@ class _RoomsScreenState extends State<RoomsScreen>{
      DropdownMenuItem(value:'en',child:Text('English')),
      DropdownMenuItem(value:'ha',child:Text('Hausa'))],
      onChanged:(v){language=v??'';load();})
-   ]),
+   ])),
    Expanded(child:loading?const Center(child:CircularProgressIndicator()):
     error!=null?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
      Text(roomError(error!)),TextButton(onPressed:load,child:const Text('Retry'))])):
@@ -75,9 +75,9 @@ class _RoomsScreenState extends State<RoomsScreen>{
      const Text('No Rooms match this search.'),
      TextButton(onPressed:(){query='';language='';load();},child:const Text('Show all'))])):
     RefreshIndicator(onRefresh:load,child:ListView.builder(itemCount:rows.length,itemBuilder:(context,i){
-     final r=rows[i];return ListTile(
+     final r=rows[i];return Padding(padding: const EdgeInsets.symmetric(horizontal:12,vertical:5), child: Card(child: ListTile(contentPadding: const EdgeInsets.all(14),
       leading:const CircleAvatar(child:Icon(Icons.school_outlined)),
-      title:Text(r.title),subtitle:Text("${r.language} · ${r.members} members · ${r.paid ? 'Paid' : 'Free'}"),
+      title:Text(r.title,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w600)),subtitle:Text("${r.language} · ${r.members} members · ${r.paid ? 'Paid' : 'Free'}"),
       trailing:Icon(r.joined?Icons.check_circle_outline:Icons.chevron_right,color:masanaBlue),
       onTap:()async{
        await Navigator.push<void>(context,MaterialPageRoute(builder:(routeContext){
@@ -89,7 +89,7 @@ class _RoomsScreenState extends State<RoomsScreen>{
         return widget.protectDetail?.call(routeContext,detail)??detail;
        }));
        if(mounted)load();
-      });
+      })));
     })))
   ]),
  );

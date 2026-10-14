@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
+import 'masana_profile_screen.dart';
 import '../../agents/masana_portrait_avatar.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/cafe_suggestions.dart';
@@ -28,6 +29,7 @@ import '../../calls/call_lifecycle_limits.dart';
 import '../../calls/group_paid_voice_transport.dart';
 import '../../calls/group_paid_voice_outbox.dart';
 import '../../core/live_pcm_audio.dart';
+import '../../core/voice_note_recorder.dart';
 import '../../core/live_voice_session.dart';
 import '../../ui/components/voice_note_composer.dart';
 import '../../core/app_permissions.dart';
@@ -80,6 +82,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _imagePicker = ImagePicker();
   bool _showEmoji = false;
   bool _hasText = false;
+  VoiceNoteRecorder? _localRecorder;
+  Completer<void>? _recordingDone;
   List<ChatAttachment> _pendingAttachments = const [];
   AiChatMessage? _replyingTo;
   bool _showSearch = false;
@@ -186,6 +190,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   void dispose() {
+    if (_recordingDone?.isCompleted == false) _recordingDone!.complete();
+    unawaited(_localRecorder?.close());
     _voiceAccountSubscription?.close();
     unawaited(_modalVoiceSession?.close() ?? Future<void>.value());
     _scrollPersistTimer?.cancel();
@@ -378,27 +384,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return active is SessionSignedIn && active.user.id == accountId;
     }
     try {
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (_) => VoiceNoteComposer(
-          recorder: recorder,
-          isOwnerCurrent: sameAccount,
-          onSend: (attachment) async {
-            if (!sameAccount() ||
-                ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) {
-              return false;
-            }
-            await ref.read(aiChatProvider.notifier)
-                .sendAttachment(widget.characterId, attachment);
-            return sameAccount();
-          },
-        ),
-      );
+      final done = Completer<void>();
+      _recordingDone = done;
+      setState(() => _localRecorder = recorder);
+      await done.future;
+
     } finally {
       await recorder.close();
       _voiceNoteSheetOpen = false;
+      if (mounted) setState(() => _localRecorder = null);
     }
   }
 
@@ -741,9 +735,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   },
                 )
               : InkWell(
-            onTap: widget.embeddedInShell
-                ? widget.onOpenAgents
-                : () => context.push('/masana'),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MasanaProfileScreen(agent: agent, onCall: () => unawaited(_startInlineLiveVoice(agent))))),
             child: Row(
               children: [
                 MasanaPortraitAvatar(agent: agent, size: 34),
@@ -841,7 +833,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               onSelected: (value) async {
                 final ctl = ref.read(aiChatProvider.notifier);
                 if (value == 'activity') widget.onOpenActivity?.call();
-                if (value == 'profile') widget.onOpenProfile?.call();
+                if (value == 'profile') Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MasanaProfileScreen(agent: agent, onCall: () => unawaited(_startInlineLiveVoice(agent)))));
                 if (value == 'clear') _confirmClear(agent);
                 if (value == 'new') await ctl.newContext(widget.characterId);
                 if (value == 'pin') ctl.togglePin(widget.characterId);
@@ -1088,10 +1080,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   }
                 },
               ),
+            if (_localRecorder case final recorder?)
+              VoiceNoteComposer(recorder: recorder,
+                isOwnerCurrent: () => mounted && ref.read(sessionProvider) is SessionSignedIn,
+                onDismiss: () { if (_recordingDone?.isCompleted == false) _recordingDone!.complete(); },
+                onSend: (attachment) async {
+                  if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return false;
+                  await ref.read(aiChatProvider.notifier).sendAttachment(widget.characterId, attachment);
+                  return mounted;
+                }),
             if (_showEmoji)
               SizedBox(
                 height: 270,
-                child: EmojiPicker(textEditingController: _input),
+                child: EmojiPicker(textEditingController: _input, config: Config(emojiViewConfig: const EmojiViewConfig(emojiSizeMax: 30), categoryViewConfig: CategoryViewConfig(indicatorColor: u.brand, iconColorSelected: u.brand), bottomActionBarConfig: BottomActionBarConfig(backgroundColor: u.brand, buttonColor: u.brand))),
               ),
           ],
         ),

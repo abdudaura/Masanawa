@@ -111,6 +111,7 @@ export function createAgentConversationService(input: {
     reply: string,
     signal?: AbortSignal,
     onAudioPcmChunk?: (dataBase64: string) => void | Promise<void>,
+    persona?: {displayName:string;roleLabel:string},
   ) {
     if (!input.nativeAudio || signal?.aborted) return undefined;
     return input.nativeAudio
@@ -120,6 +121,7 @@ export function createAgentConversationService(input: {
         onAudioPcmChunk
           ? async (chunk) => onAudioPcmChunk(chunk.toString("base64"))
           : undefined,
+        persona,
       )
       .catch(() => undefined);
   }
@@ -318,6 +320,7 @@ export function createAgentConversationService(input: {
           reply,
           request.signal,
           request.onAudioPcmChunk,
+          admission.presentation,
         );
         return Object.freeze({
           reply,
@@ -498,7 +501,7 @@ export function createAgentConversationService(input: {
           referenceId: request.requestId,
         }).catch(() => undefined);
 
-        const audio = await renderAudio(reply, request.signal);
+        const audio = await renderAudio(reply, request.signal, undefined, admission.presentation);
         return Object.freeze({
           reply,
           agentRunId,
@@ -682,7 +685,7 @@ export function createAgentConversationService(input: {
           });
         }
 
-        const audio = await renderAudio(reply, request.signal);
+        const audio = await renderAudio(reply, request.signal, undefined, admission.presentation);
         return Object.freeze({
           reply,
           agentRunId,

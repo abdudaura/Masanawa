@@ -199,6 +199,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
                 },
               },
             },
+            'sessionResumption': {},
             'outputAudioTranscription': {},
             if (captureInputTranscription) 'inputAudioTranscription': {},
             'systemInstruction': {

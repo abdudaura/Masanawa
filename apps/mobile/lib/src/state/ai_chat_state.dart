@@ -1239,7 +1239,7 @@ class AiChatController extends Notifier<AiChatState> {
           characterId,
           messageId,
           (message) => message.copyWith(
-            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            deliveryStatus: sent >= total ? 'sent' : 'uploading',
             uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
           ),
           persist: false,
@@ -1313,7 +1313,7 @@ class AiChatController extends Notifier<AiChatState> {
           characterId,
           messageId,
           (message) => message.copyWith(
-            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            deliveryStatus: sent >= total ? 'sent' : 'uploading',
             uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
           ),
           persist: false,

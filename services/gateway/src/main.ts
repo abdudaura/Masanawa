@@ -1,3 +1,4 @@
+import { loadMasanaVoiceAssignments } from './google_voice_catalog.js';
 import { FeedService, EditorialReviewService } from "@masanawa/feed";
 import { RoomError } from "@masanawa/rooms";
 import {
@@ -842,8 +843,8 @@ export async function startGatewayService(
     });
     nativeAudio = createGeminiLiveAudioRenderer({
       apiKey: alphaGeminiApiKey,
-      model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
-      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+      model: "gemini-3.8-flash-tts",
+      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Bodi",
     });
     liveVoiceTokens = createGeminiLiveTokenService({
       apiKey: alphaGeminiApiKey,
@@ -892,7 +893,14 @@ export async function startGatewayService(
     ) {
       try {
         await withCatalogProvisionLock(database.featurePool, activePlatformTenantId, async () => {
+          const catalogKey=env.MASANAWA_GEMINI_API_KEY?.trim() || env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+          let voiceAssignments:ReadonlyMap<string,string>|undefined;
+          if(catalogKey) {
+            try { voiceAssignments=await loadMasanaVoiceAssignments(catalogKey); }
+            catch { console.error(JSON.stringify({event:'google.voice_catalog_unavailable'})); }
+          }
           const roster = await ensureDefaultPlatformAgents({
+            ...(voiceAssignments ? {voiceAssignments}: {}),
             tenantId: activePlatformTenantId,
             identity: database.platformAgentIdentity!,
             presentations: database.agentPresentations!,
@@ -1318,8 +1326,9 @@ export async function startGatewayService(
         "Bodi";
       nativeAudio ??= createGeminiLiveAudioRenderer({
         apiKey: liveApiKey,
-        model: liveModel,
+        model: "gemini-3.8-flash-tts",
         voiceName: liveVoice,
+        resolveVoice: async (name) => { const assignments=await loadMasanaVoiceAssignments(liveApiKey); const voice=assignments.get(name); if(!voice) throw new Error("google.voice_profile_missing"); return voice; },
       });
       if (conversationAuthorizer) {
         liveVoiceTokens = createGeminiLiveTokenService({
