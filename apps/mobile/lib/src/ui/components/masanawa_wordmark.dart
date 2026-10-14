@@ -14,8 +14,8 @@ class MasanawaWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final main = light ? Colors.white : u.brandStrong;
-    final sub = light ? Colors.white.withValues(alpha: 0.85) : u.textMuted;
+    final main = light ? Colors.white : u.brand;
+    final sub = light ? Colors.white.withValues(alpha: 0.85) : u.brand;
     return Semantics(
       label: 'Masanawa Agents',
       child: Row(

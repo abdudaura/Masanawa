@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:masanawa/src/commerce/wallet_models.dart';
-import 'package:masanawa/src/state/wallet_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/wallet/wallet_screen.dart';
+import 'package:masanawa/src/state/wallet_state.dart';
+import 'package:masanawa/src/commerce/wallet_models.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class _UnavailableWalletController extends WalletController {
@@ -12,13 +12,11 @@ class _UnavailableWalletController extends WalletController {
 }
 
 void main() {
-  testWidgets('service entry survives a wallet balance outage', (tester) async {
+  testWidgets('Wallet keeps Crypto tab accessible during a balance outage, without bills', (tester) async {
     final intents = <String>[];
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          walletProvider.overrideWith(_UnavailableWalletController.new),
-        ],
+        overrides: [walletProvider.overrideWith(_UnavailableWalletController.new)],
         child: MaterialApp(
           theme: buildMasanawaTheme(brightness: Brightness.light),
           home: WalletScreen(onOpenBillingService: intents.add),
@@ -26,64 +24,39 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(
-      find.text('Wallet balances are unavailable right now.'),
-      findsOneWidget,
-    );
-    expect(find.text('Data bundles'), findsOneWidget);
-    expect(find.text('Airtime'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
-    await tester.tap(find.text('Data bundles'));
-    expect(intents, ['data']);
+    expect(find.text('Wallet balances are unavailable right now.'), findsOneWidget);
+    expect(find.text('Balance'), findsOneWidget);
+    expect(find.text('Crypto'), findsOneWidget);
+    for (final label in ['Data bundles', 'Airtime', 'Electricity', 'TV / Cable']) {
+      expect(find.text(label), findsNothing);
+    }
+    await tester.tap(find.text('Crypto'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TabBar), findsOneWidget);
+    expect(intents, isEmpty);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'R17 orders qualified services and passes exact category intents',
-    (tester) async {
-      final selected = <String>[];
-      var cryptoOpened = 0;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WalletServiceShortcuts(
-              onOpenCrypto: () => cryptoOpened++,
-              onOpenBillingService: selected.add,
-            ),
+  testWidgets('retired WalletServiceShortcuts never exposes billing or calls obsolete callbacks', (tester) async {
+    final selected = <String>[];
+    var cryptoOpened = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WalletServiceShortcuts(
+            onOpenCrypto: () => cryptoOpened++,
+            onOpenBillingService: selected.add,
           ),
         ),
-      );
-
-      final labels = tester
-          .widgetList<ActionChip>(find.byType(ActionChip))
-          .map((chip) => (chip.label as Text).data)
-          .toList();
-      expect(labels, [
-        'Crypto',
-        'Data bundles',
-        'Airtime',
-        'Electricity',
-        'TV / Cable',
-      ]);
-
-      await tester.tap(find.text('Crypto'));
-      await tester.tap(find.text('Data bundles'));
-      await tester.tap(find.text('Airtime'));
-      await tester.tap(find.text('Electricity'));
-      await tester.tap(find.text('TV / Cable'));
-      expect(cryptoOpened, 1);
-      expect(selected, ['data', 'airtime', 'electricity', 'tv']);
-      expect(tester.takeException(), isNull);
-    },
-  );
-
-  testWidgets('R17 does not show disabled or unqualified service actions', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: WalletServiceShortcuts())),
+      ),
     );
     expect(find.byType(ActionChip), findsNothing);
+    expect(find.text('Data bundles'), findsNothing);
+    expect(find.text('Airtime'), findsNothing);
+    expect(find.text('Electricity'), findsNothing);
+    expect(find.text('TV / Cable'), findsNothing);
+    expect(selected, isEmpty);
+    expect(cryptoOpened, 0);
     expect(tester.takeException(), isNull);
   });
 }

@@ -1,3 +1,4 @@
+import { loadMasanaVoiceAssignments } from './google_voice_catalog.js';
 import { FeedService, EditorialReviewService } from "@masanawa/feed";
 import { RoomError } from "@masanawa/rooms";
 import {
@@ -300,6 +301,7 @@ import {
 } from "./whatsapp_linked_device.js";
 import {
   ensureDefaultPlatformAgents,
+  PROFESSIONAL_MASANA_CATALOG,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
 import {
@@ -842,8 +844,16 @@ export async function startGatewayService(
     });
     nativeAudio = createGeminiLiveAudioRenderer({
       apiKey: alphaGeminiApiKey,
-      model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
-      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+      model: "gemini-3.8-flash-tts",
+      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Bodi",
+      // Alpha runtime must use the same individual, catalog-verified voice
+      // IDs as production. The previous early initialization skipped resolver.
+      resolveVoice: async (displayName) => {
+        const assigned = (await loadMasanaVoiceAssignments(alphaGeminiApiKey))
+          .get(displayName);
+        if (!assigned) throw new Error("google.voice_profile_missing");
+        return assigned;
+      },
     });
     liveVoiceTokens = createGeminiLiveTokenService({
       apiKey: alphaGeminiApiKey,
@@ -851,7 +861,13 @@ export async function startGatewayService(
       ...(database.callHistory ? { callHistory: database.callHistory } : {}),
       ...(database.platformAgentProfiles ? { platformProfiles: database.platformAgentProfiles } : {}),
       model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
-      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Bodi",
+      resolveVoice: async (name) => {
+        if (!PROFESSIONAL_MASANA_CATALOG.some((seed) => seed.displayName === name)) return undefined;
+        const assigned = (await loadMasanaVoiceAssignments(alphaGeminiApiKey)).get(name);
+        if (!assigned) throw new Error("google.voice_profile_missing");
+        return assigned;
+      },
     });
   }
 
@@ -892,7 +908,14 @@ export async function startGatewayService(
     ) {
       try {
         await withCatalogProvisionLock(database.featurePool, activePlatformTenantId, async () => {
+          const catalogKey=env.MASANAWA_GEMINI_API_KEY?.trim() || env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+          let voiceAssignments:ReadonlyMap<string,string>|undefined;
+          if(catalogKey) {
+            try { voiceAssignments=await loadMasanaVoiceAssignments(catalogKey); }
+            catch { console.error(JSON.stringify({event:'google.voice_catalog_unavailable'})); }
+          }
           const roster = await ensureDefaultPlatformAgents({
+            ...(voiceAssignments ? {voiceAssignments}: {}),
             tenantId: activePlatformTenantId,
             identity: database.platformAgentIdentity!,
             presentations: database.agentPresentations!,
@@ -1318,8 +1341,9 @@ export async function startGatewayService(
         "Bodi";
       nativeAudio ??= createGeminiLiveAudioRenderer({
         apiKey: liveApiKey,
-        model: liveModel,
+        model: "gemini-3.8-flash-tts",
         voiceName: liveVoice,
+        resolveVoice: async (name) => { const assignments=await loadMasanaVoiceAssignments(liveApiKey); const voice=assignments.get(name); if(!voice) throw new Error("google.voice_profile_missing"); return voice; },
       });
       if (conversationAuthorizer) {
         liveVoiceTokens = createGeminiLiveTokenService({
@@ -1329,6 +1353,12 @@ export async function startGatewayService(
           ...(database.platformAgentProfiles ? { platformProfiles: database.platformAgentProfiles } : {}),
           model: liveModel,
           voiceName: liveVoice,
+          resolveVoice: async (name) => {
+            if (!PROFESSIONAL_MASANA_CATALOG.some((seed) => seed.displayName === name)) return undefined;
+            const assigned = (await loadMasanaVoiceAssignments(liveApiKey)).get(name);
+            if (!assigned) throw new Error("google.voice_profile_missing");
+            return assigned;
+          },
           ...(twinProduction
             ? { paidVoiceAdmission: twinProduction.voiceAdmissionGate }
             : {}),
@@ -2501,6 +2531,14 @@ export async function startGatewayService(
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
+      ...(!composedBillingWallet && billingCustomerAuthorizer && database.ngnWallet
+        ? { ngnReadOnlyBalance: async (header: string | undefined) => {
+            const identity = await billingCustomerAuthorizer!.authorize({
+              authorizationHeader: header,
+            });
+            return database.ngnWallet!.readBalance(identity);
+          } }
+        : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(composedCustomerChannels
         ? { customerChannels: composedCustomerChannels }

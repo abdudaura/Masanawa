@@ -565,7 +565,7 @@ void main() {
   );
 
   test('hosted Gateway is the default local connection address', () {
-    expect(kAgentBaseUrl, 'https://masanawa-gateway-production.up.railway.app');
+    expect(kAgentBaseUrl, 'https://masanawa-gateway-production-338f.up.railway.app');
   });
 
   test(

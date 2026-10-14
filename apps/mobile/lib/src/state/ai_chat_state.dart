@@ -556,7 +556,8 @@ class AiChatController extends Notifier<AiChatState> {
     for (final message in thread.messages.where(
       (m) => m.isUser &&
           m.requestId != null &&
-          {'sending', 'queued', 'processing', 'failed'}.contains(m.deliveryStatus),
+          {'sending', 'sent', 'uploading', 'queued', 'processing', 'failed'}
+               .contains(m.deliveryStatus),
     )) {
       try {
         final status = await transport.turnStatus(characterId, message.requestId!);
@@ -1007,7 +1008,9 @@ class AiChatController extends Notifier<AiChatState> {
       sendingIn: {...state.sendingIn, characterId},
     );
     await _save();
-    _setDelivery(characterId, userMsg.id, 'sent');
+    // A queued voice note is not yet accepted by the network.
+    _setDelivery(characterId, userMsg.id,
+        userMsg.allAttachments.isNotEmpty ? 'uploading' : 'sending');
     if (_disposed || threadGeneration != (_threadGenerations[characterId] ?? 0))
       return;
     try {
@@ -1091,6 +1094,15 @@ class AiChatController extends Notifier<AiChatState> {
           uploadProgress: message.allAttachments.isNotEmpty ? 1.0 : null,
         ),
       );
+      final requiresVoiceReply =
+          userMsg.allAttachments.any((item) => item.kind == 'voice');
+      if (requiresVoiceReply &&
+          (result.audioBytes == null || result.audioBytes!.isEmpty)) {
+        throw const ApiException(
+          'The agent could not return playable audio. Retry the voice note.',
+          code: 'VOICE_REPLY_MISSING',
+        );
+      }
       ChatAttachment? replyAudio;
       if (result.audioBytes case final audio? when audio.isNotEmpty) {
         // Voice-note and text replies can carry Gemini raw PCM, not a WAV
@@ -1115,9 +1127,19 @@ class AiChatController extends Notifier<AiChatState> {
                 : const [],
           );
         } catch (_) {
-          // Preserve the delivered conversation turn if provider audio has an
-          // unsupported format, is malformed, or cannot be cached locally.
+          if (requiresVoiceReply) {
+            throw const ApiException(
+              'The voice reply could not be played. Retry the voice note.',
+              code: 'VOICE_REPLY_UNPLAYABLE',
+            );
+          }
         }
+      }
+      if (requiresVoiceReply && replyAudio == null) {
+        throw const ApiException(
+          'The voice reply is missing. Retry the voice note.',
+          code: 'VOICE_REPLY_UNPLAYABLE',
+        );
       }
       if (streamMessageId != null) {
         await _finalizeAiStream(
@@ -1165,6 +1187,7 @@ class AiChatController extends Notifier<AiChatState> {
             actionLabel: feedback.actionLabel,
           ),
         ],
+        requestId: userMsg.requestId,
       );
     }
   }
@@ -1239,7 +1262,7 @@ class AiChatController extends Notifier<AiChatState> {
           characterId,
           messageId,
           (message) => message.copyWith(
-            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            deliveryStatus: sent >= total ? 'sent' : 'uploading',
             uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
           ),
           persist: false,
@@ -1313,7 +1336,7 @@ class AiChatController extends Notifier<AiChatState> {
           characterId,
           messageId,
           (message) => message.copyWith(
-            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            deliveryStatus: sent >= total ? 'sent' : 'uploading',
             uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
           ),
           persist: false,
@@ -1506,6 +1529,31 @@ class AiChatController extends Notifier<AiChatState> {
   }) async {
     if (_disposed) return;
     final thread = threadOf(characterId);
+    // The completion event can restore a reply before the HTTP response has
+    // finished rendering its audio. Both deliveries belong to one user turn.
+    final existingIndex = requestId == null ? -1 : thread.messages.indexWhere(
+      (message) => !message.isUser && message.requestId == requestId,
+    );
+    if (existingIndex >= 0) {
+      final messages = [...thread.messages];
+      final existing = messages[existingIndex];
+      messages[existingIndex] = existing.copyWith(
+        text: text,
+        parts: parts.isEmpty ? existing.parts : parts,
+        attachment: attachment ?? existing.attachment,
+        deliveryStatus: 'delivered',
+      );
+      state = state.copyWith(
+        threads: {...state.threads, characterId: thread.copyWith(
+          messages: messages,
+          agentRunId: agentRunId ?? thread.agentRunId,
+        )},
+        sendingIn: {...state.sendingIn}..remove(characterId),
+      );
+      _markUserMessages(characterId, {'delivered'}, 'read');
+      await _save();
+      return;
+    }
     final isOpen = state.openThreadId == characterId;
     final msg = AiChatMessage(
       id: _newId(),
@@ -1687,7 +1735,9 @@ class AiChatController extends Notifier<AiChatState> {
         messages[i] = message.copyWith(deliveryStatus: 'stopped');
         continue;
       }
-      if (message.isUser && message.deliveryStatus == 'sending') {
+      if (message.isUser &&
+          (message.deliveryStatus == 'sending' ||
+           message.deliveryStatus == 'uploading')) {
         messages[i] = message.copyWith(deliveryStatus: 'stopped');
         break;
       }

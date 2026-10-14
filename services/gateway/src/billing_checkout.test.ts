@@ -191,17 +191,17 @@ function providerTransport(verifiedAmount = "101"): FlutterwaveBillsTransport {
     async request(request) {
       if (request.method === "GET" && request.path === "/v3/top-bill-categories") {
         return { status: 200, body: { status: "success", data: [{
-          code: "AIRTIME", name: "Airtime", description: "Airtime", country_code: "NG",
+          code: "MOBILEDATA", name: "Airtime", description: "Airtime", country_code: "NG",
         }] } };
       }
-      if (request.method === "GET" && request.path === "/v3/bills/AIRTIME/billers") {
+      if (request.method === "GET" && request.path === "/v3/bills/MOBILEDATA/billers") {
         return { status: 200, body: { status: "success", data: [{
-          biller_code: "BIL102", name: "MTN Airtime",
+          biller_code: "BIL102", name: "MTN Data Bundle",
         }] } };
       }
       if (request.method === "GET" && request.path === "/v3/billers/BIL102/items") {
         return { status: 200, body: { status: "success", data: [{
-          biller_code: "BIL102", item_code: "AT102", name: "MTN Airtime",
+          biller_code: "BIL102", item_code: "AT102", name: "MTN Data Bundle",
           amount: "0", currency: "NGN", label_name: "Phone",
         }] } };
       }
@@ -353,7 +353,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -422,7 +422,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -485,7 +485,7 @@ describe("billing checkout", () => {
     });
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -523,7 +523,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -567,7 +567,7 @@ describe("billing checkout", () => {
     });
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -633,47 +633,32 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
       amount: "100",
     });
-    const quotedDoc = quoted.document as {
-      id: string;
-      revision: number;
-      nodes: Array<{ action?: string; token?: string }>;
-    };
-    const start = quotedDoc.nodes.find((node) => node.action === "billing.checkout.start")!;
+    // The modern quote document starts a canonical wallet purchase. Hosted
+    // checkout still has a direct compatibility service for already-created
+    // links and historical settlement; exercise that service explicitly.
     at = "2026-10-04T20:00:30.000Z";
-    const checkoutExecution = await service.executeShellAction({
+    const checkout = await service.startCheckout({
       authorizationHeader: "Bearer session",
-      documentId: quotedDoc.id,
-      revision: quotedDoc.revision,
-      actionId: "billing.checkout.start",
-      token: start.token!,
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
     });
-    const checkoutDoc = checkoutExecution.document as {
-      id: string;
-      revision: number;
-      expiresAt: string;
-      nodes: Array<{ action?: string; token?: string }>;
-    };
-    const verify = checkoutDoc.nodes.find((node) => node.action === "billing.checkout.verify")!;
-
+    const checkoutDoc = checkout.document as { expiresAt: string };
     expect(Date.parse(checkoutDoc.expiresAt)).toBeGreaterThan(
       Date.parse(quoted.quote.expiresAt),
     );
 
-    // The economic quote has expired, but this checkout was legitimately
-    // created before expiry and remains in its bounded hosted-payment grace.
+    // The economic quote expired, but hosted payment was created beforehand.
     at = "2026-10-04T20:02:00.000Z";
-    const verified = await service.executeShellAction({
+    const verified = await service.verifyAndPurchase({
       authorizationHeader: "Bearer session",
-      documentId: checkoutDoc.id,
-      revision: checkoutDoc.revision,
-      actionId: "billing.checkout.verify",
-      token: verify.token!,
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
     });
 
     expect(verified.phase).toBe("fulfilled");
@@ -734,7 +719,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -839,7 +824,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -906,7 +891,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -937,7 +922,7 @@ describe("billing service qualification policy", () => {
   ] as const;
 
   for (const categoryCode of categoryCodes) {
-    it(`validates provider customer identity for ${categoryCode}`, async () => {
+    it(`rejects discontinued provider category ${categoryCode}`, async () => {
       const owner = identity();
       const quotes = new MemoryQuotes();
       let validationCalls = 0;
@@ -987,8 +972,8 @@ describe("billing service qualification policy", () => {
         itemCode: "ITEM900",
         customerId: "CUSTOMER-900",
         amount: "100",
-      })).resolves.toMatchObject({ quote: { categoryCode, state: "quoted" } });
-      expect(validationCalls).toBe(1);
+      })).rejects.toThrow("financial.billing.data_only");
+      expect(validationCalls).toBe(0);
     });
   }
 
@@ -1032,14 +1017,21 @@ describe("billing service qualification policy", () => {
         actionSecret: "a".repeat(48),
         redirectUrl: "https://app.masanawa.com/billing/return",
       });
-      await expect(service.createQuote({
+      const requestQuote = () => service.createQuote({
         authorizationHeader: "Bearer session",
         categoryCode,
         billerCode: "BIL901",
         itemCode: "ITEM901",
         customerId: "+2348012345678",
         amount: "100",
-      })).resolves.toMatchObject({ quote: { categoryCode, state: "quoted" } });
+      });
+      if (categoryCode === "MOBILEDATA") {
+        await expect(requestQuote()).resolves.toMatchObject({
+          quote: { categoryCode, state: "quoted" },
+        });
+      } else {
+        await expect(requestQuote()).rejects.toThrow("financial.billing.data_only");
+      }
       expect(validationCalls).toBe(0);
     });
   }

@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../chat/chat_format.dart';
 import '../../core/startup_metrics.dart';
 import '../../chat/message_parts.dart';
-import '../../finance/crypto_wallet_screen.dart';
 import '../../features/masana_chat/inbox_search.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
@@ -336,7 +335,7 @@ class ChatListScreen extends ConsumerWidget {
     activityText.dispose();
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: masanawaMainHeader(
         context,
         bottom: activity.isEmpty && chat.online
@@ -349,7 +348,7 @@ class ChatListScreen extends ConsumerWidget {
                       : () => _showActivity(context, directory, activity),
                   child: Container(
                     width: double.infinity,
-                    color: u.surfaceBg,
+                    color: u.surfaceCard,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 8,
@@ -388,13 +387,7 @@ class ChatListScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'Wallet',
             icon: const Icon(Icons.account_balance_wallet_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CryptoWalletScreen(),
-                ),
-              );
-            },
+            onPressed: () => context.go('/home?tab=wallet'),
           ),
           IconButton(
             tooltip: 'New chat',
@@ -405,7 +398,7 @@ class ChatListScreen extends ConsumerWidget {
             tooltip: 'Settings & profile',
             icon: CircleAvatar(
               radius: 14,
-              backgroundColor: u.surfaceBg,
+              backgroundColor: u.surfaceCard,
               child: Text(
                 userName.isNotEmpty ? userName[0].toUpperCase() : 'M',
                 style: TextStyle(

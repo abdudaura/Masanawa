@@ -20,7 +20,7 @@ class PaidVoiceQuoteSheet extends StatelessWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,42 +35,42 @@ class PaidVoiceQuoteSheet extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             Text(
               isTrial ? 'Try live voice free' : 'Start live voice',
               style: TextStyle(
                 color: u.textPrimary,
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               isTrial
                   ? 'Your free trial lasts ${quote.trialDurationDays} days. You will not be charged for this session while the trial applies.'
                   : 'Estimated cost: ${quote.estimatedPriceCredits} Credits. You will never be charged above the approved session limit without a new confirmation.',
               style: TextStyle(
                 color: u.textMuted,
-                fontSize: 14,
-                height: 1.45,
+                fontSize: 12,
+                height: 1.2,
               ),
             ),
             if (isTrial && quote.trialExpiresAt != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 4),
               Text(
                 'Trial ends ${MaterialLocalizations.of(context).formatMediumDate(quote.trialExpiresAt!)}',
                 style: TextStyle(color: u.textMuted, fontSize: 12),
               ),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: onContinue,
-                child: Text(isTrial ? 'Start free voice' : 'Continue'),
+                child: Text(isTrial ? 'Start trial call' : 'Continue'),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 3),
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),

@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'agent_directory.dart';
 
-/// Curated offline vector portraits, keyed only by the server display label.
-/// These are **fictional AI character illustrations**, not photographs of
-/// licensed real-world professionals or a hard-coded contact directory.
-const _names = ["Mallam Gwani Bodi","Malamah Gwana Sulafat","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
+/// Archived fictional vector illustrations, intentionally NOT used as the
+/// owner's requested final photo portraits. Stable profile URLs are preferred;
+/// unknown or unavailable artwork renders neutral initials instead.
+const _names = ["Gwani","Gwana","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
 
+const _portraitKeys = ["gwani","gwana","amina","fatima","salim","zainab","sadiq","musa","bello","umar","safiya","ruqayya","idris","maryam","kabir","hauwa","yusuf","haruna","bilkisu","nura","aisha","abdulrahman","layla","grace","asha","mei"];
+
+/// The 26 names and keys follow the canonical Gateway seed roster exactly.
 String? portraitAssetFor(String displayName){
  final index=_names.indexOf(displayName.trim());
- return index<0?null:'assets/masana/avatars/portrait_${index.toString().padLeft(2,'0')}.svg';
+ return index<0?null:'assets/masana/portraits/${_portraitKeys[index]}.webp';
 }
 String? bannerAssetFor(String displayName){
  final index=_names.indexOf(displayName.trim());
@@ -21,15 +24,32 @@ class MasanaPortraitAvatar extends StatelessWidget{
  final AgentDirectoryEntry agent;
  final double size;
  @override Widget build(BuildContext context){
-  final asset=portraitAssetFor(agent.displayName),url=agent.avatarUrl;
-  return ClipOval(child: SizedBox(width:size,height:size,child:
-   asset!=null?SvgPicture.asset(asset,width:size,height:size,fit:BoxFit.cover,
-       semanticsLabel:'AI portrait of ${agent.displayName}'):
-   url!=null&&url.isNotEmpty?Image.network(url,width:size,height:size,
-       fit:BoxFit.cover,errorBuilder:(_,__,___)=>_initial()):
-   _initial()));
+  final url=agent.avatarUrl?.trim();
+  // The bundled 384px generated photographs are offline-first and work
+  // before directory portrait hosting is configured. Admin-supplied URLs
+  // take precedence, but failures fall back to the matching local portrait.
+  final localAsset=portraitAssetFor(agent.displayName);
+  Widget fallback()=>localAsset==null
+    ? _initial(context)
+    : Image.asset(localAsset,width:size,height:size,fit:BoxFit.cover,
+        semanticLabel:'AI portrait of ${agent.displayName}',
+        errorBuilder:(_,_,_)=>_initial(context));
+  // Old server SVG/cartoon avatar URLs cannot override the approved photo
+  // pack. Admin-assigned raster photos continue to take precedence.
+  final isRetiredIllustration=localAsset!=null &&
+      (Uri.tryParse(url ?? '')?.path.toLowerCase().endsWith('.svg')==true ||
+       (url ?? '').toLowerCase().contains('/masana/avatars/'));
+  final portrait=url==null||url.isEmpty||isRetiredIllustration?fallback():
+    Uri.tryParse(url)?.path.toLowerCase().endsWith('.svg')==true?
+      SvgPicture.network(url,width:size,height:size,fit:BoxFit.cover,
+        semanticsLabel:'AI portrait of ${agent.displayName}',
+        placeholderBuilder:(_)=>fallback(),errorBuilder:(_,_,_)=>fallback()):
+      Image.network(url,width:size,height:size,fit:BoxFit.cover,
+        semanticLabel:'AI portrait of ${agent.displayName}',
+        errorBuilder:(_,_,_)=>fallback());
+  return ClipOval(child:SizedBox(width:size,height:size,child:portrait));
  }
- Widget _initial()=>ColoredBox(color:const Color(0xFF1E63D6),
+ Widget _initial(BuildContext context)=>ColoredBox(color:Theme.of(context).colorScheme.primary,
     child:Center(child:Text(agent.initial,style:TextStyle(
       color:Colors.white,fontSize:size*.37,fontWeight:FontWeight.bold))));
 }

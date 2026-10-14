@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import 'wallet_models.dart';
 
@@ -25,16 +26,23 @@ class GatewayWalletTransport implements WalletTransport {
 
   @override
   Future<WalletView> load() async {
-    final results = await Future.wait([
-      api.dio.get<dynamic>('/v1/wallet'),
-      api.dio.get<dynamic>('/v1/wallet/ngn'),
-    ]);
-    final base = _map(results[0].data);
-    final ngn = _map(results[1].data);
+    // NGN and Credits have different Gateway capabilities. A missing NGN
+    // endpoint must not wipe the entire usable Credits wallet, and a missing
+    // balance must NEVER be represented to the customer as ₦0.00.
+    final base = _map((await api.dio.get<dynamic>('/v1/wallet')).data);
+    Map<String, dynamic>? ngn;
+    try {
+      ngn = _map((await api.dio.get<dynamic>('/v1/wallet/ngn')).data);
+    } on DioException catch (error) {
+      // Auth failures must still invalidate the session normally.
+      if (error.response?.statusCode == 401 ||
+          error.response?.statusCode == 403) rethrow;
+      ngn = null;
+    }
     return WalletView.fromJson({
       ...base,
-      'ngnBalanceKobo': ngn['balanceKobo'] ?? 0,
-      'ngnBalance': ngn['balance'],
+      'ngnBalanceKobo': ngn?['balanceKobo'],
+      'ngnBalance': ngn?['balance'],
     });
   }
 

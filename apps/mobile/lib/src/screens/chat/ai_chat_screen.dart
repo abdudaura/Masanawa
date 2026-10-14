@@ -17,6 +17,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
+import 'masana_profile_screen.dart';
+import 'components/paid_voice_quote_sheet.dart';
 import '../../agents/masana_portrait_avatar.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/cafe_suggestions.dart';
@@ -28,6 +30,7 @@ import '../../calls/call_lifecycle_limits.dart';
 import '../../calls/group_paid_voice_transport.dart';
 import '../../calls/group_paid_voice_outbox.dart';
 import '../../core/live_pcm_audio.dart';
+import '../../core/voice_note_recorder.dart';
 import '../../core/live_voice_session.dart';
 import '../../ui/components/voice_note_composer.dart';
 import '../../core/app_permissions.dart';
@@ -80,6 +83,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _imagePicker = ImagePicker();
   bool _showEmoji = false;
   bool _hasText = false;
+  VoiceNoteRecorder? _localRecorder;
+  Completer<void>? _recordingDone;
+  String? _recordingAccountId;
   List<ChatAttachment> _pendingAttachments = const [];
   AiChatMessage? _replyingTo;
   bool _showSearch = false;
@@ -109,6 +115,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
   bool _inlineVoiceClosing = false;
   bool _voiceNoteSheetOpen = false;
+  final _voiceComposerKey = GlobalKey<VoiceNoteComposerState>();
+  bool _heldMicCancelled = false;
+  bool _heldMicLocked = false;
 
   @override
   void initState() {
@@ -120,6 +129,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       final previousId = previous is SessionSignedIn ? previous.user.id : null;
       final nextId = next is SessionSignedIn ? next.user.id : null;
       if (previousId != nextId) {
+        if (_recordingDone?.isCompleted == false) _recordingDone!.complete();
+        unawaited(_localRecorder?.cancel() ?? Future<void>.value());
         unawaited(_inlineVoiceSession?.close() ?? Future<void>.value());
         unawaited(_modalVoiceSession?.close() ?? Future<void>.value());
       }
@@ -186,6 +197,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   void dispose() {
+    if (_recordingDone?.isCompleted == false) _recordingDone!.complete();
+    unawaited(_localRecorder?.close());
     _voiceAccountSubscription?.close();
     unawaited(_modalVoiceSession?.close() ?? Future<void>.value());
     _scrollPersistTimer?.cancel();
@@ -356,6 +369,52 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     return false;
   }
 
+  void _micHoldStart() {
+    _heldMicCancelled = false;
+    _heldMicLocked = false;
+    unawaited(_openVoiceNoteComposer());
+  }
+
+  void _micHoldMove(Offset offsetFromOrigin) {
+    if (_heldMicCancelled) return;
+    if (offsetFromOrigin.dx < -72) {
+      _heldMicCancelled = true;
+    } else if (offsetFromOrigin.dy < -72) {
+      _heldMicLocked = true;
+      _voiceComposerKey.currentState?.lockRecording();
+    }
+  }
+
+  void _micHoldEnd() {
+    final cancel = _heldMicCancelled;
+    final locked = _heldMicLocked;
+    // The finger can be released before Flutter has mounted the inline
+    // recorder. Retry a bounded number of frames rather than discarding it.
+    Future<void> deliver() async {
+      for (var attempt = 0; attempt < 8; attempt++) {
+        if (!mounted || _recordingAccountId == null) return;
+        final composer = _voiceComposerKey.currentState;
+        if (composer != null) {
+          if (cancel) {
+            await composer.cancelFromGesture();
+          } else if (locked) {
+            composer.lockRecording();
+          } else {
+            await composer.sendOnRelease();
+          }
+          return;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+      }
+      // Never leave a secretly running microphone after an unmounted gesture.
+      if (!locked) {
+        await _localRecorder?.cancel();
+        if (_recordingDone?.isCompleted == false) _recordingDone!.complete();
+      }
+    }
+    unawaited(deliver());
+  }
+
   /// Record a local voice message, without starting a paid LiveKit/Gemini call.
   /// The existing chat controller retains offline queue/retry and receipts.
   Future<void> _openVoiceNoteComposer() async {
@@ -369,99 +428,39 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final session = ref.read(sessionProvider);
     if (session is! SessionSignedIn || session.user.id.isEmpty) return;
     final accountId = session.user.id;
+    _recordingAccountId = accountId;
     final recorder = ref.read(voiceNoteRecorderFactoryProvider)();
     _voiceNoteSheetOpen = true;
     FocusScope.of(context).unfocus();
-    bool sameAccount() {
-      if (!mounted) return false;
-      final active = ref.read(sessionProvider);
-      return active is SessionSignedIn && active.user.id == accountId;
-    }
     try {
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (_) => VoiceNoteComposer(
-          recorder: recorder,
-          isOwnerCurrent: sameAccount,
-          onSend: (attachment) async {
-            if (!sameAccount() ||
-                ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) {
-              return false;
-            }
-            await ref.read(aiChatProvider.notifier)
-                .sendAttachment(widget.characterId, attachment);
-            return sameAccount();
-          },
-        ),
-      );
+      final done = Completer<void>();
+      _recordingDone = done;
+      setState(() => _localRecorder = recorder);
+      await done.future;
+
     } finally {
       await recorder.close();
+      _recordingAccountId = null;
+      _recordingDone = null;
       _voiceNoteSheetOpen = false;
+      if (mounted) setState(() => _localRecorder = null);
     }
   }
 
   // ---- Attachments ---------------------------------------------------------
 
-  void _openAttachSheet() {
-    FocusScope.of(context).unfocus();
-    final u = context.masanawa;
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-            child: Wrap(
-              spacing: 18,
-              runSpacing: 12,
-              alignment: WrapAlignment.center,
-              children: [
-                // Token roles: brand → doc, verified → gallery, warning → camera.
-                _AttachOption(
-                  icon: Icons.insert_drive_file,
-                  color: u.success,
-                  label: 'Document',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickDocument();
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.photo,
-                  color: u.brand,
-                  label: 'Gallery',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickMultipleImages();
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.camera_alt,
-                  color: u.warning,
-                  label: 'Camera',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickImage(ImageSource.camera);
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.videocam_outlined,
-                  color: u.brandStrong,
-                  label: 'Video',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickVideo();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void _chooseAttachment(String choice) {
+    // The menu is anchored beside the composer and does not obscure chat.
+    switch (choice) {
+      case 'document':
+        unawaited(_pickDocument());
+      case 'gallery':
+        unawaited(_pickMultipleImages());
+      case 'camera':
+        unawaited(_pickImage(ImageSource.camera));
+      case 'video':
+        unawaited(_pickVideo());
+    }
   }
 
   Future<void> _pickDocument() async {
@@ -704,7 +703,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         if (didPop) setState(() => _showEmoji = false);
       },
       child: Scaffold(
-        backgroundColor: u.chatBg,
+        backgroundColor: u.surfaceCard,
         appBar: AppBar(
           backgroundColor: u.surfaceCard,
           foregroundColor: u.textPrimary,
@@ -741,9 +740,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   },
                 )
               : InkWell(
-            onTap: widget.embeddedInShell
-                ? widget.onOpenAgents
-                : () => context.push('/masana'),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MasanaProfileScreen(agent: agent, onCall: () => unawaited(_startInlineLiveVoice(agent))))),
             child: Row(
               children: [
                 MasanaPortraitAvatar(agent: agent, size: 34),
@@ -756,7 +753,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         agent.displayName,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: u.textPrimary,
                           fontSize: 16.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -765,7 +762,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         workingLabel,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: .82),
+                          color: u.textMuted,
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                         ),
@@ -777,6 +774,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
           actions: [
+            if (_selectedMessageIds.isEmpty && !_showSearch)
+              TextButton(
+                onPressed: () => context.push('/billing?service=data'),
+                child: Text('Data Bundles',
+                  style: TextStyle(color: u.brand, fontSize: 12,
+                    fontWeight: FontWeight.w700)),
+              ),
             if (_selectedMessageIds.isNotEmpty) ...[
               IconButton(
                 tooltip: 'Copy selected',
@@ -841,7 +845,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               onSelected: (value) async {
                 final ctl = ref.read(aiChatProvider.notifier);
                 if (value == 'activity') widget.onOpenActivity?.call();
-                if (value == 'profile') widget.onOpenProfile?.call();
+                if (value == 'profile') Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MasanaProfileScreen(agent: agent, onCall: () => unawaited(_startInlineLiveVoice(agent)))));
                 if (value == 'clear') _confirmClear(agent);
                 if (value == 'new') await ctl.newContext(widget.characterId);
                 if (value == 'pin') ctl.togglePin(widget.characterId);
@@ -1074,10 +1078,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   await _activeVoiceBubble?._pauseFromAnotherBubble();
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
-                onAttach: _openAttachSheet,
+                onAttach: _chooseAttachment,
                 onMic: updateRequired
                     ? () {}
                     : () => unawaited(_openVoiceNoteComposer()),
+                onMicHoldStart: updateRequired ? () {} : _micHoldStart,
+                onMicHoldMove: updateRequired ? (_) {} : _micHoldMove,
+                onMicHoldEnd: updateRequired ? () {} : _micHoldEnd,
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -1088,10 +1095,32 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   }
                 },
               ),
+            if (_localRecorder case final recorder?)
+              VoiceNoteComposer(key: _voiceComposerKey, recorder: recorder,
+                isOwnerCurrent: () {
+                  final active = ref.read(sessionProvider);
+                  return mounted && active is SessionSignedIn &&
+                      _recordingAccountId != null &&
+                      active.user.id == _recordingAccountId;
+                },
+                onDismiss: () { if (_recordingDone?.isCompleted == false) _recordingDone!.complete(); },
+                onSend: (attachment) async {
+                  final active = ref.read(sessionProvider);
+                  if (!mounted || active is! SessionSignedIn ||
+                      active.user.id != _recordingAccountId ||
+                      ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return false;
+                  // Enqueue in the same authenticated chat controller immediately.
+                  // Do not hold the recorder UI open while waiting for the
+                  // whole provider/agent response. Its bubble tracks upload,
+                  // delivery and failures independently.
+                  unawaited(ref.read(aiChatProvider.notifier)
+                      .sendAttachment(widget.characterId, attachment));
+                  return mounted;
+                }),
             if (_showEmoji)
               SizedBox(
                 height: 270,
-                child: EmojiPicker(textEditingController: _input),
+                child: EmojiPicker(textEditingController: _input, config: Config(emojiViewConfig: const EmojiViewConfig(emojiSizeMax: 30), categoryViewConfig: CategoryViewConfig(indicatorColor: u.brand, iconColorSelected: u.brand), bottomActionBarConfig: BottomActionBarConfig(backgroundColor: u.brand, buttonColor: u.brand))),
               ),
           ],
         ),
@@ -1401,25 +1430,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       expectedSeconds: 5 * 60,
     );
     if (quote == null || !mounted) return (false, null, null);
-    final accepted = await showDialog<bool>(
+    final accepted = await showModalBottomSheet<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Voice with ${agent.displayName}'),
-        content: Text(
-          quote.isTrial
-              ? 'Your ${quote.trialDurationDays}-day voice trial covers this live conversation.'
-              : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified live time is charged.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Not now'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(quote.isTrial ? 'Start voice' : 'Accept & start'),
-          ),
-        ],
+      isScrollControlled: true,
+      showDragHandle: false,
+      builder: (sheetContext) => PaidVoiceQuoteSheet(
+        quote: quote,
+        onContinue: () => Navigator.of(sheetContext).pop(true),
       ),
     );
     if (accepted != true) return (false, null, null);
@@ -1727,25 +1744,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (quote != null) {
         estimatedSeconds = quote.estimatedSeconds;
         if (!mounted) return;
-        final accepted = await showDialog<bool>(
+        final accepted = await showModalBottomSheet<bool>(
           context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text('Voice with ${agent.displayName}'),
-            content: Text(
-              quote.isTrial
-                  ? 'Your ${quote.trialDurationDays}-day voice trial covers this call. You will not be charged for trial usage.'
-                  : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified call time is charged and unused Credits are returned.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Not now'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(quote.isTrial ? 'Start trial call' : 'Accept & call'),
-              ),
-            ],
+          isScrollControlled: true,
+          showDragHandle: false,
+          builder: (sheetContext) => PaidVoiceQuoteSheet(
+            quote: quote,
+            onContinue: () => Navigator.of(sheetContext).pop(true),
           ),
         );
         if (accepted != true) return;
@@ -2189,44 +2194,6 @@ class _CallControl extends StatelessWidget {
   }
 }
 
-class _AttachOption extends StatelessWidget {
-  const _AttachOption({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              child: Icon(icon, color: Colors.white, size: 24),
-            ),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(color: u.textPrimary, fontSize: 12)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _InlineVoicePanel extends StatelessWidget {
   const _InlineVoicePanel({
@@ -2360,6 +2327,9 @@ class _Composer extends StatelessWidget {
     required this.onStop,
     required this.onAttach,
     required this.onMic,
+    required this.onMicHoldStart,
+    required this.onMicHoldMove,
+    required this.onMicHoldEnd,
     required this.onEmojiToggle,
   });
 
@@ -2368,8 +2338,11 @@ class _Composer extends StatelessWidget {
   final bool sending;
   final VoidCallback onSend;
   final VoidCallback onStop;
-  final VoidCallback onAttach;
+  final ValueChanged<String> onAttach;
   final VoidCallback onMic;
+  final VoidCallback onMicHoldStart;
+  final ValueChanged<Offset> onMicHoldMove;
+  final VoidCallback onMicHoldEnd;
   final VoidCallback onEmojiToggle;
 
   @override
@@ -2417,16 +2390,35 @@ class _Composer extends StatelessWidget {
                         ),
                       ),
                     ),
-                    _ComposerIcon(
-                      tooltip: 'Attach',
-                      icon: Icons.attach_file,
-                      onPressed: onAttach,
-                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(width: 6),
+            SizedBox(
+              width: 42,
+              height: 48,
+              child: PopupMenuButton<String>(
+                tooltip: 'Attach',
+                padding: EdgeInsets.zero,
+                icon: Icon(Icons.attach_file, size: 21, color: u.textMuted),
+                onSelected: onAttach,
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'document',
+                    child: ListTile(dense: true, leading: Icon(Icons.description_outlined),
+                      title: Text('Document'))),
+                  PopupMenuItem(value: 'gallery',
+                    child: ListTile(dense: true, leading: Icon(Icons.photo_outlined),
+                      title: Text('Gallery'))),
+                  PopupMenuItem(value: 'camera',
+                    child: ListTile(dense: true, leading: Icon(Icons.camera_alt_outlined),
+                      title: Text('Camera'))),
+                  PopupMenuItem(value: 'video',
+                    child: ListTile(dense: true, leading: Icon(Icons.videocam_outlined),
+                      title: Text('Video'))),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
             Semantics(
               button: true,
               label: hasText ? 'Send message' : 'Record voice note',
@@ -2434,7 +2426,14 @@ class _Composer extends StatelessWidget {
                   color: u.brand,
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
-                  child: InkWell(
+                  child: GestureDetector(
+                    onLongPressStart: sending || hasText
+                        ? null : (_) => onMicHoldStart(),
+                    onLongPressMoveUpdate: sending || hasText
+                        ? null : (details) => onMicHoldMove(details.offsetFromOrigin),
+                    onLongPressEnd: sending || hasText
+                        ? null : (_) => onMicHoldEnd(),
+                    child: InkWell(
                     onTap: sending ? onStop : (hasText ? onSend : onMic),
                     child: SizedBox(
                       width: 48,
@@ -2453,6 +2452,7 @@ class _Composer extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ),
                   ),
                 ),
               ),

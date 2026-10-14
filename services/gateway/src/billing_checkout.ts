@@ -1,3 +1,4 @@
+import { requireDataBundleCategory } from "./billing_data_policy.js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { BillingQuote, BillingQuoteRepository } from "@masanawa/commerce";
 import {
@@ -636,6 +637,7 @@ export function createBillingCheckoutService(input: Readonly<{
   const service: BillingCheckoutService = {
     async createQuote(request) {
       const owner = await identity(request.authorizationHeader);
+      requireDataBundleCategory(request.categoryCode);
       const categories = await input.catalog.listCategories(request.signal);
       const category = categories.find((entry) => entry.code === request.categoryCode);
       if (!category) throw new Error("financial.billing.catalog_category_unavailable");
@@ -699,6 +701,9 @@ export function createBillingCheckoutService(input: Readonly<{
 
     async startCheckout(request) {
       const owned = await ownedQuote(request.authorizationHeader,request.quoteId);
+      // Existing paid legacy purchases can still be reconciled via verify/read,
+      // but an unstarted non-data quote must not open a NEW checkout.
+      requireDataBundleCategory(owned.quote.categoryCode ?? "");
       if (owned.quote.revision !== request.quoteRevision) {
         throw new Error("financial.billing.quote_revision_conflict");
       }

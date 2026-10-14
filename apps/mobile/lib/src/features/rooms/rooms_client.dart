@@ -1,16 +1,25 @@
 import 'package:dio/dio.dart';
 class RoomInfo {
- const RoomInfo(this.id,this.title,this.teacher,this.language,this.members,this.paid,this.joined);
+ const RoomInfo(this.id,this.title,this.teacher,this.language,this.members,this.paid,this.joined,
+  {this.teacherDisplayName,this.priceKobo,this.trialMinutes});
  final String id,title,teacher,language;final int members;final bool paid,joined;
+ /// Optional server-authoritative labels/terms; never invent a price or trial.
+ final String? teacherDisplayName;
+ final int? priceKobo,trialMinutes;
  factory RoomInfo.fromJson(Map<String,dynamic> j)=>RoomInfo(j['roomId'] as String,j['professionTitle'] as String,
   j['teacherCharacterId'] as String,j['language'] as String,(j['memberCount'] as num?)?.toInt()??0,
-  j['planMode']=='paid',j['joined']==true);
+  j['planMode']=='paid',j['joined']==true,
+  teacherDisplayName: j['teacherDisplayName'] is String ? j['teacherDisplayName'] as String : null,
+  priceKobo: j['priceKobo'] is int && (j['priceKobo'] as int)>=0 ? j['priceKobo'] as int : null,
+  trialMinutes: j['trialMinutes'] is int && (j['trialMinutes'] as int)>0 ? j['trialMinutes'] as int : null);
 }
 class RoomQuestion {
- const RoomQuestion(this.id,this.body,this.status,this.answer);
+ const RoomQuestion(this.id,this.body,this.status,this.answer,{this.authorUserId});
  final String id,body,status;final String? answer;
+ final String? authorUserId;
  factory RoomQuestion.fromJson(Map<String,dynamic> j)=>RoomQuestion(j['questionId'] as String,
-  j['body'] as String,j['state'] as String,j['answer'] as String?);
+  j['body'] as String,j['state'] as String,j['answer'] as String?,
+  authorUserId:j['authorUserId'] is String ? j['authorUserId'] as String : null);
 }
 class RoomLesson {
  const RoomLesson(this.id,this.body,this.kind);

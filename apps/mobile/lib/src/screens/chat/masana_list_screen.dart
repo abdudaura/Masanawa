@@ -14,11 +14,24 @@ import '../../theme/masanawa_theme.dart';
 
 /// Server-driven Masana roster. No persona names, roles or capabilities are
 /// compiled into the app; admin configuration can change without a release.
-class MasanaListScreen extends ConsumerWidget {
+class MasanaListScreen extends ConsumerStatefulWidget {
   const MasanaListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MasanaListScreen> createState() => _MasanaListState();
+}
+
+class _MasanaListState extends ConsumerState<MasanaListScreen> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) {
     final u = context.masanawa;
     final directory = ref.watch(agentDirectoryProvider);
 
@@ -124,8 +137,42 @@ class MasanaListScreen extends ConsumerWidget {
       );
     }
 
+    final agents = directory.agents
+        .where(
+          (a) => '${a.displayName} ${a.roleLabel} ${a.about}'
+              .toLowerCase()
+              .contains(_query.toLowerCase()),
+        )
+        .toList();
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: TextField(
+            controller: _searchController,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Search by name or expertise',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      tooltip: 'Clear Masana search',
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                    )
+                  : null,
+            ),
+            onChanged: (value) => setState(() => _query = value.trim()),
+          ),
+        ),
+        if (agents.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('No Masana match your search.'),
+          ),
         if (directory.error != null)
           MaterialBanner(
             content: Text(directory.error!),
@@ -144,11 +191,11 @@ class MasanaListScreen extends ConsumerWidget {
                 ref.read(agentDirectoryProvider.notifier).refresh(),
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: directory.agents.length,
+              itemCount: agents.length,
               separatorBuilder: (_, _) =>
                   Divider(height: 1, indent: 76, color: u.structuralBorder),
               itemBuilder: (context, index) {
-                final agent = directory.agents[index];
+                final agent = agents[index];
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -173,12 +220,14 @@ class MasanaListScreen extends ConsumerWidget {
                     ),
                   ),
                   trailing: agent.roomId == null
-                      ? Icon(Icons.chat_bubble_outline, color: u.brand)
+                      ? null
                       : IconButton(
                           tooltip: 'Open ${agent.displayName} Room',
                           icon: const Icon(Icons.school_outlined),
                           color: u.brand,
-                          onPressed: () => context.push('/rooms/${Uri.encodeComponent(agent.roomId!)}'),
+                          onPressed: () => context.push(
+                            '/rooms/${Uri.encodeComponent(agent.roomId!)}',
+                          ),
                         ),
                   onTap: () {
                     ref
@@ -204,7 +253,10 @@ class _MasanaAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final strings = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final strings = Localizations.of<AppLocalizations>(
+      context,
+      AppLocalizations,
+    );
     final presence = strings == null
         ? agent.presenceLabel
         : localizedAgentPresence(strings, agent);

@@ -32,7 +32,7 @@ void main() {
         .setMockMethodCallHandler(storageChannel, null);
   });
 
-  testWidgets('fresh install shows the brand then opens phone login', (
+  testWidgets('fresh install opens phone login without a splash or delay', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -43,22 +43,18 @@ void main() {
         child: const MasanawaApp(),
       ),
     );
-    await tester.pump();
-    expect(find.byType(MasanawaLogo), findsOneWidget);
-    expect(find.byType(PhoneLoginScreen), findsNothing);
-    expect(tester.takeException(), isNull);
-
-    await tester.pump(const Duration(milliseconds: 1300));
     await tester.pumpAndSettle();
     expect(find.byType(PhoneLoginScreen), findsOneWidget);
     expect(find.text('Welcome to Masanawa'), findsOneWidget);
+    // A logo-only timer is never an authorization or startup prerequisite.
+    expect(find.byType(MasanawaLogo), findsNothing);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
 
-  testWidgets('disposing splash before the brand delay cancels its timers', (
+  testWidgets('disposing during session restoration leaves no delayed splash', (
     tester,
   ) async {
     await tester.pumpWidget(

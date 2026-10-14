@@ -28,13 +28,11 @@ void main(){
    final api=AnsweringRooms();
    await tester.pumpWidget(MaterialApp(home:RoomHomeScreen(client:api,id:'room_math')));
    await tester.pumpAndSettle();
-   await tester.tap(find.text('Questions'));
-   await tester.pump();
    await tester.enterText(find.byType(TextField),'What is 2+2?');
-   await tester.tap(find.byTooltip('Send question'));
+   await tester.tap(find.byTooltip('Send message'));
    await tester.pump();
    await tester.pump(const Duration(milliseconds:250));
-   expect(find.text('AI teacher is preparing an answer'),findsOneWidget);
+   expect(find.text('Teacher is preparing a reply'),findsOneWidget);
    final before=api.readCount;
    api.ready=true;
    await tester.pump(const Duration(seconds:3));
@@ -50,6 +48,8 @@ void main(){
    await tester.pumpWidget(MaterialApp(home:RoomHomeScreen(client:api,id:'room_math')));
    await tester.pump();
    await tester.pump(const Duration(milliseconds:100));
+   await tester.tap(find.byTooltip('Room info'));
+   await tester.pumpAndSettle();
    expect(find.text('Leave Room'),findsOneWidget);
    await tester.tap(find.text('Leave Room'));
    await tester.pump();
@@ -57,6 +57,6 @@ void main(){
    final before=api.readCount;
    await tester.pump(const Duration(seconds:5));
    expect(api.readCount,before);
-   expect(find.text('Join free Room'),findsOneWidget);
+   expect(find.text('Join Room'),findsOneWidget);
  });
 }

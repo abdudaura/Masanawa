@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../commerce/wallet_models.dart';
+import '../../finance/crypto_wallet_screen.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
 import '../../finance/msn_balance_card.dart';
@@ -81,12 +82,7 @@ class WalletScreen extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
-        WalletServiceShortcuts(
-          onOpenCrypto: onOpenCrypto,
-          onBuyBills: onBuyBills,
-          onOpenBillingService: onOpenBillingService,
-        ),
-        const SizedBox(height: 24),
+
         if (loading)
           const Center(child: CircularProgressIndicator())
         else ...[
@@ -106,10 +102,20 @@ class WalletScreen extends ConsumerWidget {
       ],
     );
 
-    return Scaffold(
-      backgroundColor: u.surfaceBg,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+      backgroundColor: u.surfaceCard,
       appBar: embeddedInShell ? null : masanawaMainHeader(context),
-      body: RefreshIndicator(
+      body: Column(children: [
+        const TabBar(
+          tabs: [
+            Tab(text: 'Balance'),
+            Tab(text: 'Crypto'),
+          ],
+        ),
+        Expanded(child: TabBarView(children: [
+      RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
         child: wallet.when(
           skipLoadingOnRefresh: false,
@@ -182,11 +188,7 @@ class WalletScreen extends ConsumerWidget {
                     ),
                   ),
                 const SizedBox(height: 12),
-                WalletServiceShortcuts(
-                  onOpenCrypto: onOpenCrypto,
-                  onBuyBills: onBuyBills,
-                  onOpenBillingService: onOpenBillingService,
-                ),
+
                 if (onAddMoney != null ||
                     sendAction != null ||
                     onWithdraw != null) ...[
@@ -230,6 +232,10 @@ class WalletScreen extends ConsumerWidget {
           },
         ),
       ),
+      const CryptoWalletScreen(embeddedInWallet: true),
+        ])),
+      ]),
+    ),
     );
   }
 }
@@ -246,10 +252,10 @@ class _Balances extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Spendable Credits', style: TextStyle(color: u.textMuted)),
+          Text('Available NGN', style: TextStyle(color: u.textMuted)),
           const SizedBox(height: 4),
           Text(
-            '${view.spendableCredits} Cr',
+            view.ngnBalanceLabel,
             style: TextStyle(
               color: u.textPrimary,
               fontSize: 24,
@@ -257,10 +263,16 @@ class _Balances extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          Text('Credits', style: TextStyle(color: u.textMuted, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 24,
             runSpacing: 12,
             children: [
+              _SmallBalance(
+                label: 'Spendable',
+                value: '${view.spendableCredits} Cr',
+              ),
               _SmallBalance(
                 label: 'Pending',
                 value: '${view.pendingEarningsCredits} Cr',
@@ -301,6 +313,8 @@ class _SmallBalance extends StatelessWidget {
 
 /// Shared service links remain navigation-only until the private durable
 /// voice-first financial task contract is integrated (R06/R07).
+/// Legacy compatibility widget. Bill-payment controls are intentionally
+/// absent from Wallet; data bundles live in the conversation header.
 class WalletServiceShortcuts extends StatelessWidget {
   const WalletServiceShortcuts({
     super.key,
@@ -308,49 +322,11 @@ class WalletServiceShortcuts extends StatelessWidget {
     this.onBuyBills,
     this.onOpenBillingService,
   });
-
   final VoidCallback? onOpenCrypto;
   final VoidCallback? onBuyBills;
   final ValueChanged<String>? onOpenBillingService;
-
   @override
-  Widget build(BuildContext context) {
-    final billing = onOpenBillingService;
-    if (onOpenCrypto == null && onBuyBills == null && billing == null) {
-      return const SizedBox.shrink();
-    }
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        if (onOpenCrypto != null)
-          ActionChip(
-            avatar: const Icon(Icons.currency_bitcoin, size: 18),
-            label: const Text('Crypto'),
-            onPressed: onOpenCrypto,
-          ),
-        if (billing != null) ...[
-          ActionChip(
-            label: const Text('Data bundles'),
-            onPressed: () => billing('data'),
-          ),
-          ActionChip(
-            label: const Text('Airtime'),
-            onPressed: () => billing('airtime'),
-          ),
-          ActionChip(
-            label: const Text('Electricity'),
-            onPressed: () => billing('electricity'),
-          ),
-          ActionChip(
-            label: const Text('TV / Cable'),
-            onPressed: () => billing('tv'),
-          ),
-        ] else if (onBuyBills != null)
-          ActionChip(label: const Text('Billing'), onPressed: onBuyBills),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class _Actions extends StatelessWidget {

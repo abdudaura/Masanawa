@@ -44,7 +44,8 @@ describe("26 professional Masana production bootstrap",()=>{
    expect(PROFESSIONAL_MASANA_CATALOG.filter(s=>s.supportAgent)).toHaveLength(2);
    expect(new Set(PROFESSIONAL_MASANA_CATALOG.map(s=>s.roomId)).size).toBe(26);
    expect(PROFESSIONAL_MASANA_CATALOG.slice(-4).map(s=>s.languages[0])).toEqual(["ar","en","hi","zh"]);
-   expect(PROFESSIONAL_MASANA_CATALOG.every(s=>s.displayName.includes(" "))).toBe(true);
+   expect(PROFESSIONAL_MASANA_CATALOG.slice(0,2).map(s=>s.displayName)).toEqual(["Gwani","Gwana"]);
+   expect(PROFESSIONAL_MASANA_CATALOG.slice(2).every(s=>s.displayName.includes(" "))).toBe(true);
  });
  it("provisions 26 chat/call identities, keeps Gwani default and is idempotent",async()=>{
    const f=fixture(),tenant=createCanonicalId("tenant");
@@ -78,8 +79,8 @@ describe("26 professional Masana production bootstrap",()=>{
    const result=await run(f,tenant);
    expect(result.characterIds[0]).toBe(gwani);
    expect(result.characterIds[1]).toBe(gwana);
-   expect(f.presentations[0]?.displayName).toBe("Mallam Gwani Bodi");
-   expect(f.presentations[1]?.displayName).toBe("Malamah Gwana Sulafat");
+   expect(f.presentations[0]?.displayName).toBe("Gwani");
+   expect(f.presentations[1]?.displayName).toBe("Gwana");
    expect(f.identity.provision).toHaveBeenCalledTimes(24);
    expect(f.profiles).toHaveLength(26);
  });

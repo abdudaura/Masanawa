@@ -9,7 +9,7 @@ export interface RoomPreview {
 }
 export interface RoomQuestion {
   questionId:string; roomId:string; body:string; state:QuestionState;
-  queuedAt:string; answer:string|null;
+  queuedAt:string; answer:string|null; authorUserId?:string;
 }
 export class RoomError extends Error {
   constructor(public readonly status:number,public readonly code:string,message=code){super(message);}

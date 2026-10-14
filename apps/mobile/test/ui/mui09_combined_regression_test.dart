@@ -96,7 +96,7 @@ void main() {
     for (final locale in ['en', 'ha', 'ar']) {
       for (final scale in [1.0, 2.0]) {
         testWidgets(
-          'combined shell $width $locale ${scale}x search/tab/crypto Back',
+          'combined shell $width $locale ${scale}x search/tab/embedded crypto',
           (tester) async {
             tester.view.physicalSize = Size(width, 900);
             tester.view.devicePixelRatio = 1;
@@ -220,7 +220,7 @@ void main() {
               Localizations.localeOf(
                 tester.element(find.byType(FiveTabShell)),
               ).languageCode,
-              locale == 'ha' ? 'en' : locale,
+              locale,
             );
             final field = find.byType(TextField);
             await tester.enterText(field, 'no authorized match');
@@ -271,9 +271,10 @@ void main() {
             await tester.tap(find.text('Crypto'));
             await tester.pumpAndSettle();
             expect(find.byType(CryptoWalletScreen), findsOneWidget);
-            expect(find.byType(NavigationBar), findsNothing);
+            // Crypto is now a section of the main Wallet, not another route.
+            expect(find.byType(NavigationBar), findsOneWidget);
             await save('crypto');
-            await tester.tap(find.byType(BackButton));
+            await tester.tap(find.text('Balance'));
             await tester.pumpAndSettle();
             expect(
               tester
@@ -287,13 +288,13 @@ void main() {
             await tab(4);
             await save('rooms-unavailable');
             expect(
-              find.text('Could not load rooms. Pull to try again.'),
+              find.text('Sign in to view your Rooms.'),
               findsOneWidget,
             );
             await tab(1);
-            expect(find.text('Couldn’t load Talks right now.'), findsOneWidget);
+            expect(find.text('Sign in to view Status updates.'), findsOneWidget);
             await save('status-unavailable');
-            // Status/Rooms still mount legacy Talk resources; acceptance remains OPEN.
+            // Signed-out Status and Rooms remain isolated and never mount private data.
             await tab(0);
             expect(
               tester.widget<TextField>(find.byType(TextField)).controller!.text,

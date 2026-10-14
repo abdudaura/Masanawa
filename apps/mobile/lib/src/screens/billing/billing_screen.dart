@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/api/billing_models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
 import '../../state/wallet_state.dart';
 
+bool isDataBundleBillCategory(BillCategory category) {
+  final code = category.code.trim().toUpperCase();
+  return code == 'MOBILEDATA' || code == 'MOBILE_DATA' ||
+      code == 'MOBILE-DATA' || code == 'DATA' ||
+      code == 'INTERNET' || code == 'INTERNET_DATA' ||
+      code == 'INTERNET-DATA';
+}
+
 BillCategory? billingCategoryForHomeService(
   List<BillCategory> categories,
   String? service,
 ) {
-  final initial = service?.trim().toLowerCase();
-  if (initial == null || initial.isEmpty) return null;
-  final terms = switch (initial) {
-    'data' => const ['data', 'internet'],
-    'airtime' => const ['airtime', 'air time', 'mobile recharge'],
-    'electricity' => const ['electricity', 'power'],
-    'tv' => const ['tv', 'cable', 'television'],
-    _ => <String>[initial],
-  };
-  for (final value in categories) {
-    final haystack = (value.code + ' ' + value.name).toLowerCase();
-    if (terms.any(haystack.contains)) return value;
+  // Retired bill types do not reopen a checkout through a legacy deep link.
+  if (service?.trim().toLowerCase() != 'data') return null;
+  for (final category in categories) {
+    if (isDataBundleBillCategory(category)) return category;
   }
   return null;
 }
@@ -37,6 +38,8 @@ class BillingScreen extends ConsumerStatefulWidget {
 class _BillingScreenState extends ConsumerState<BillingScreen> {
   final customer = TextEditingController();
   final amount = TextEditingController();
+  String period = 'All';
+  bool userSelectedNetwork = false;
 
   List<BillCategory> categories = const [];
   List<BillBiller> billers = const [];
@@ -75,16 +78,18 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     if (mounted) setState(() { loading = true; error = null; });
     try {
       final nextCategories = await api.billingCategories();
-      final nextHistory = await api.billingHistory(limit: 30);
+      // History failure must not block purchasing available data bundles.
+      List<BillingCheckoutView> nextHistory = const [];
+      try { nextHistory = await api.billingHistory(limit: 30); } catch (_) {}
       if (!mounted) return;
       setState(() {
-        categories = nextCategories;
+        categories = nextCategories.where(isDataBundleBillCategory).toList(growable: false);
         history = nextHistory;
         loading = false;
       });
       if (category == null) {
         final matched =
-            billingCategoryForHomeService(nextCategories, widget.initialService);
+            billingCategoryForHomeService(nextCategories, 'data');
         if (matched != null) await selectCategory(matched);
       }
     } catch (value) {
@@ -97,7 +102,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> selectCategory(BillCategory? value) async {
-    if (value == null || busy) return;
+    if (value == null || busy || !isDataBundleBillCategory(value)) return;
     setState(() {
       category = value;
       biller = null;
@@ -125,7 +130,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       biller = value;
       item = null;
       items = const [];
-      customer.clear();
       amount.clear();
       busy = true;
       error = null;
@@ -144,7 +148,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     if (value == null || busy) return;
     setState(() {
       item = value;
-      customer.clear();
       amount.text = value.variableAmount ? '' : value.amount;
       error = null;
     });
@@ -156,12 +159,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final selectedItem = item;
     final recipient = customer.text.trim();
     final rawAmount = amount.text.trim();
-    if (selectedCategory == null || selectedBiller == null || selectedItem == null) {
-      setState(() => error = 'Choose a category, provider and service.');
+    if (selectedCategory == null || !isDataBundleBillCategory(selectedCategory) ||
+        selectedBiller == null || selectedItem == null) {
+      setState(() => error = 'Select a network and a data bundle.');
       return;
     }
     if (recipient.isEmpty || (num.tryParse(rawAmount) ?? 0) <= 0) {
-      setState(() => error = 'Enter valid recipient details and amount.');
+      setState(() => error = 'Enter a valid phone number to buy this bundle.');
       return;
     }
     setState(() { busy = true; error = null; });
@@ -250,6 +254,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       customer.clear();
       amount.clear();
       walletAction = null;
+      userSelectedNetwork = false;
+      period = 'All';
       error = null;
     });
   }
@@ -258,11 +264,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bills & payments'),
+        title: const Text('Data bundles'),
         actions: [
           if (current != null)
             IconButton(
-              tooltip: 'New bill',
+              tooltip: 'New data bundle',
               onPressed: busy ? null : newBill,
               icon: const Icon(Icons.add),
             ),
@@ -276,12 +282,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           children: [
             if (loading) const LinearProgressIndicator(minHeight: 2),
             if (error != null) ...[
-              Card(
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(error!),
-                ),
+              ListTile(
+                dense: true,
+                leading: const Icon(Icons.info_outline),
+                title: Text(error!),
+                trailing: TextButton(onPressed: busy ? null : load,
+                  child: const Text('Retry')),
               ),
               const SizedBox(height: 12),
             ],
@@ -292,7 +298,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             const SizedBox(height: 28),
             Row(
               children: [
-                Text('Recent bills', style: Theme.of(context).textTheme.titleMedium),
+                Text('Payment history', style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 IconButton(
                   tooltip: 'Refresh history',
@@ -304,7 +310,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             if (history.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 28),
-                child: Center(child: Text('No bill payments yet')),
+                child: Center(child: Text('No payments yet')),
               )
             else
               for (final entry in history)
@@ -327,83 +333,148 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     );
   }
 
+
+  // Phone number portability means prefixes suggest rather than prove operator.
+  String? suggestedNetwork(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final local = digits.startsWith('234') && digits.length >= 6
+        ? '0' + digits.substring(3) : digits;
+    if (local.length < 4) return null;
+    final prefix = local.substring(0, 4);
+    if (const {'0803','0806','0703','0706','0810','0813','0814','0816','0903','0906','0913','0916'}.contains(prefix)) return 'mtn';
+    if (const {'0802','0808','0701','0708','0812','0901','0902','0904','0907','0912'}.contains(prefix)) return 'airtel';
+    if (const {'0805','0807','0811','0815','0905','0915'}.contains(prefix)) return 'glo';
+    if (const {'0809','0817','0818','0908','0909'}.contains(prefix)) return '9mobile';
+    return null;
+  }
+
+  String networkName(BillBiller value) {
+    final name = value.name.toLowerCase();
+    if (name.contains('mtn')) return 'mtn';
+    if (name.contains('airtel')) return 'airtel';
+    if (name.contains('glo')) return 'glo';
+    if (name.contains('9mobile') || name.contains('etisalat')) return '9mobile';
+    return '';
+  }
+
+  // Infer only stated durations; never invent validity for missing metadata.
+  String planPeriod(BillItem plan) {
+    final text = plan.name.toLowerCase();
+    if (RegExp(r'\b(daily|1\s*day|24\s*hours?)\b').hasMatch(text)) return 'Daily';
+    if (RegExp(r'\b(weekly|7\s*days?)\b').hasMatch(text)) return 'Weekly';
+    if (RegExp(r'\b(monthly|30\s*days?|31\s*days?)\b').hasMatch(text)) return 'Monthly';
+    return 'Other';
+  }
+
+  void phoneChanged(String value) {
+    if (userSelectedNetwork || busy || category == null) return;
+    final suggested = suggestedNetwork(value);
+    if (suggested == null) return;
+    for (final provider in billers) {
+      if (networkName(provider) == suggested &&
+          biller?.billerCode != provider.billerCode) {
+        selectBiller(provider);
+        break;
+      }
+    }
+  }
+
   Widget buildForm() {
-    final selectedItem = item;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Pay a bill', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 6),
-        const Text('Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.'),
-        const SizedBox(height: 18),
-        DropdownButtonFormField<BillCategory>(
-          value: category,
-          decoration: const InputDecoration(labelText: 'Category'),
-          items: categories.map((value) => DropdownMenuItem(
-            value: value,
-            child: Text(value.name),
-          )).toList(growable: false),
-          onChanged: busy ? null : selectCategory,
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<BillBiller>(
-          value: biller,
-          decoration: const InputDecoration(labelText: 'Provider'),
-          items: billers.map((value) => DropdownMenuItem(
-            value: value,
-            child: Text(value.name),
-          )).toList(growable: false),
-          onChanged: busy || billers.isEmpty ? null : selectBiller,
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<BillItem>(
-          value: item,
-          isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Service'),
-          items: items.map((value) => DropdownMenuItem(
-            value: value,
-            child: Text(
-              value.variableAmount
-                  ? value.name
-                  : value.name + ' · ₦' + value.amount,
-              overflow: TextOverflow.ellipsis,
-            ),
-          )).toList(growable: false),
-          onChanged: busy || items.isEmpty ? null : selectItem,
-        ),
-        if (selectedItem != null) ...[
-          const SizedBox(height: 12),
-          TextField(
-            controller: customer,
-            decoration: InputDecoration(
-              labelText: selectedItem.labelName?.trim().isNotEmpty == true
-                  ? selectedItem.labelName
-                  : (category?.code == 'AIRTIME' || category?.code == 'MOBILEDATA')
-                      ? 'Phone number'
-                      : 'Customer / meter / smartcard number',
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: amount,
-            readOnly: !selectedItem.variableAmount,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Amount (NGN)',
-              helperText: selectedItem.variableAmount
-                  ? 'Enter the provider-supported amount.'
-                  : 'Fixed by the provider.',
-            ),
-          ),
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: busy ? null : createQuote,
-            icon: const Icon(Icons.receipt_long_outlined),
-            label: const Text('Review quote'),
-          ),
-        ],
-      ],
+    final wallet = ref.watch(walletProvider);
+    final balance = wallet.when(
+      data: (value) => value,
+      loading: () => null,
+      error: (_, _) => null,
     );
+    final available = items.where((value) =>
+      !value.variableAmount && (num.tryParse(value.amount) ?? 0) > 0 &&
+      (period == 'All' || planPeriod(value) == period)).toList();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text('Data Bundles', style: Theme.of(context).textTheme.headlineSmall),
+      const SizedBox(height: 6),
+      const Text('Choose your network, enter a number and pick a bundle.'),
+      const SizedBox(height: 14),
+      Card(child: Padding(padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          const Icon(Icons.account_balance_wallet_outlined),
+          const SizedBox(width: 12),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Wallet balance'),
+            Text(balance?.ngnBalanceLabel ?? 'Balance unavailable',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+          ])),
+          TextButton(onPressed: () => context.go('/home?tab=wallet'),
+            child: const Text('Fund')),
+        ]))),
+      const SizedBox(height: 16),
+      TextField(controller: customer,
+        keyboardType: TextInputType.phone,
+        autofillHints: const [AutofillHints.telephoneNumber],
+        decoration: const InputDecoration(
+          labelText: 'Phone number',
+          hintText: '0803 123 4567',
+          prefixIcon: Icon(Icons.phone_android_outlined)),
+        onChanged: phoneChanged),
+      const SizedBox(height: 16),
+      Text('Network', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 4),
+      const Text('Prefixes are suggestions only. Confirm the network if this number was ported.',
+        style: TextStyle(fontSize: 12)),
+      const SizedBox(height: 10),
+      if (busy && billers.isEmpty)
+        const LinearProgressIndicator(minHeight: 2),
+      Wrap(spacing: 8,runSpacing: 8, children: [
+        for (final provider in billers)
+          ChoiceChip(
+            selected: biller?.billerCode == provider.billerCode,
+            avatar: CircleAvatar(radius: 12,child: Text(
+              provider.name.isEmpty ? '?' : provider.name[0].toUpperCase(),
+              style: const TextStyle(fontSize: 11))),
+            label: Text(provider.name),
+            onSelected: busy ? null : (_) {
+              userSelectedNetwork = true;
+              selectBiller(provider);
+            }),
+      ]),
+      if (billers.isEmpty && !busy)
+        const Padding(padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text('No networks returned by the provider. Refresh to retry.')),
+      if (biller != null) ...[
+        const SizedBox(height: 18),
+        Text('Available bundles',style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 10),
+        SingleChildScrollView(scrollDirection: Axis.horizontal,
+          child: Row(children: [
+          for (final option in const ['All','Daily','Weekly','Monthly'])
+            Padding(padding: const EdgeInsets.only(right: 7),
+              child: ChoiceChip(label: Text(option),selected: period == option,
+                onSelected: (_) => setState(() => period = option))),
+        ])),
+        const SizedBox(height: 8),
+        if (busy && items.isEmpty)
+          const LinearProgressIndicator(minHeight: 2),
+        if (!busy && available.isEmpty)
+          const Padding(padding: EdgeInsets.all(16),
+            child: Text('No priced bundles in this category from the provider. Try All or another network.')),
+        for (final plan in available)
+          Card(child: ListTile(
+            title: Text(plan.name, maxLines: 2,overflow: TextOverflow.ellipsis),
+            subtitle: Text(planPeriod(plan) == 'Other'
+                ? 'Provider plan' : planPeriod(plan)),
+            trailing: Text('₦' + plan.amount,
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+            onTap: busy ? null : () async {
+              final phone = customer.text.trim();
+              if (!RegExp(r'^(?:0[789]\d{9}|\+?234[789]\d{9})$').hasMatch(phone)) {
+                setState(() => error = 'Enter a valid Nigerian phone number first.');
+                return;
+              }
+              selectItem(plan);
+              await createQuote();
+            })),
+      ],
+    ]);
   }
 
   Widget buildTransaction(BillingCheckoutView view) {
@@ -461,7 +532,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           OutlinedButton.icon(
             onPressed: busy ? null : newBill,
             icon: const Icon(Icons.add),
-            label: const Text('Pay another bill'),
+            label: const Text('Buy another bundle'),
           ),
         ],
       ],

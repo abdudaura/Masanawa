@@ -16,15 +16,17 @@ final voiceNoteRecorderFactoryProvider = Provider<VoiceNoteRecorder Function()>(
 /// starts a live call. The parent owns the authenticated send boundary.
 class VoiceNoteComposer extends StatefulWidget {
   const VoiceNoteComposer({super.key, required this.recorder,
-    required this.isOwnerCurrent, required this.onSend, this.previewPlayer});
+    required this.isOwnerCurrent, required this.onSend, this.previewPlayer, this.onDismiss});
   final VoiceNoteRecorder recorder;
   final bool Function() isOwnerCurrent;
   final Future<bool> Function(ChatAttachment) onSend;
   final AudioPlayer? previewPlayer;
-  @override State<VoiceNoteComposer> createState() => _VoiceNoteComposerState();
+  final VoidCallback? onDismiss;
+  @override State<VoiceNoteComposer> createState() => VoiceNoteComposerState();
 }
 
-class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
+class VoiceNoteComposerState extends State<VoiceNoteComposer> {
+  bool _locked = false;
   bool _sending = false;
   bool _previewPlaying = false;
   bool _previewLoading = false;
@@ -38,6 +40,48 @@ class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
       if (mounted) unawaited(widget.recorder.start(isOwnerCurrent: widget.isOwnerCurrent));
     });
   }
+
+  /// Called when a held composer microphone is released. Permission
+  /// acquisition can still be in flight, so never race a release with start().
+  Future<void> sendOnRelease() async {
+    if (!mounted || !widget.isOwnerCurrent()) {
+      await widget.recorder.cancel();
+      return;
+    }
+    if (widget.recorder.state == VoiceNoteState.starting) {
+      final completer = Completer<void>();
+      void settled() {
+        if (widget.recorder.state != VoiceNoteState.starting &&
+            !completer.isCompleted) completer.complete();
+      }
+      widget.recorder.addListener(settled);
+      try {
+        settled();
+        await completer.future.timeout(const Duration(seconds: 8));
+      } on TimeoutException {
+        await widget.recorder.cancel();
+        return;
+      } finally {
+        widget.recorder.removeListener(settled);
+      }
+    }
+    if (!mounted || !widget.isOwnerCurrent()) {
+      await widget.recorder.cancel();
+      return;
+    }
+    if (widget.recorder.state == VoiceNoteState.recording ||
+        widget.recorder.state == VoiceNoteState.ready) {
+      await _send();
+    }
+  }
+
+  void lockRecording() {
+    if (mounted && widget.recorder.state == VoiceNoteState.recording) {
+      setState(() => _locked = true);
+    }
+  }
+
+  Future<void> cancelFromGesture() => _cancel();
 
   Future<void> _playPreviewToEnd() async {
     try {
@@ -107,7 +151,7 @@ class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
         return;
       }
       widget.recorder.retain();
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) { if(widget.onDismiss != null) { widget.onDismiss!(); } else { Navigator.of(context).pop(); } }
     } catch (failure) {
       if (mounted) setState(() => _error = audioFailureMessage(failure, fallback: 'The voice note could not be sent. Please try again.'));
     } finally {
@@ -118,7 +162,7 @@ class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
   Future<void> _cancel() async {
     await _stopPreview();
     await widget.recorder.cancel();
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) { if(widget.onDismiss != null) { widget.onDismiss!(); } else { Navigator.of(context).pop(); } }
   }
 
   @override Widget build(BuildContext context) {
@@ -133,19 +177,29 @@ class _VoiceNoteComposerState extends State<VoiceNoteComposer> {
         final seconds = recorder.elapsed.inSeconds;
         final message = _error ?? recorder.error;
         return Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.mic, size: 36, color: recording ? colors.emergency : colors.brandStrong),
-          const SizedBox(height: 12),
-          Text(recording ? 'Recording voice note' : ready ? 'Voice note ready' : busy ? 'Starting recording…' : 'Voice note',
-            textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+          Icon(Icons.mic, size: 20, color: recording ? colors.emergency : colors.brandStrong),
+          const SizedBox(height: 4),
+          Text(_locked && recording ? 'Voice note locked' : recording ? 'Recording voice note' : ready ? 'Voice note ready' : busy ? 'Starting recording…' : 'Voice note',
+            textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
           Text('${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
-            style: TextStyle(color: colors.textPrimary, fontSize: 24)),
+            style: TextStyle(color: colors.textPrimary, fontSize: 18)),
           if (message != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(message, textAlign: TextAlign.center)),
           if (busy) const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
+          if (recording) Text(_locked
+                ? 'Locked · tap Unlock or Send'
+                : 'Hold to record · slide left to cancel · up to lock',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.textMuted, fontSize: 11)),
           Wrap(alignment: WrapAlignment.center, spacing: 12, runSpacing: 8, children: [
             TextButton(onPressed: _sending ? null : _cancel, child: const Text('Cancel')),
+            if (recording) TextButton.icon(
+              onPressed: busy ? null : () => setState(() => _locked = !_locked),
+              icon: Icon(_locked ? Icons.lock_open_outlined : Icons.lock_outline),
+              label: Text(_locked ? 'Unlock' : 'Lock'),
+            ),
             if (recording) OutlinedButton(onPressed: busy ? null : () => unawaited(recorder.stop()), child: const Text('Stop')),
             if (ready) OutlinedButton.icon(
               onPressed: busy ? null : _togglePreview,

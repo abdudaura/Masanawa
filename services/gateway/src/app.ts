@@ -153,6 +153,8 @@ export interface GatewayAppOptions {
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
+  /** Authenticated ledger balance read independent of Flutterwave readiness. */
+  readonly ngnReadOnlyBalance?: (authorizationHeader: string | undefined) => Promise<number>;
   readonly financial?: FinancialService;
   readonly customerChannels?: CustomerChannelOptions;
   readonly linkedWhatsApp?: Readonly<{
@@ -1608,6 +1610,25 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     ...(options.billingFinancial ? { billingFinancial: options.billingFinancial } : {}),
     ...(options.billingWallet ? { billingWallet: options.billingWallet } : {}),
   });
+  // A missing Flutterwave biller configuration must NOT make the customer's
+  // already-owned NGN ledger unreadable. Funds remain unspendable unless
+  // separately enabled provider/checkout contracts authorize writes.
+  if (!options.billingWallet && options.ngnReadOnlyBalance) {
+    app.get("/v1/wallet/ngn", async (request, reply) => {
+      try {
+        const balanceKobo = await options.ngnReadOnlyBalance!(request.headers.authorization);
+        if (!Number.isSafeInteger(balanceKobo) || balanceKobo < 0)
+          throw new Error("financial.wallet.balance_invalid");
+        const naira = Math.floor(balanceKobo / 100);
+        const kobo = String(balanceKobo % 100).padStart(2, "0");
+        return { balanceKobo, balance: `${naira}.${kobo}` };
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "";
+        reply.code(msg.includes("unauthorized") || msg === "UNAUTHORIZED" ? 401 : 503);
+        return { error: "wallet_unavailable" };
+      }
+    });
+  }
 
   if (options.customerChannels) {
     registerCustomerChannelRoutes(app, options.customerChannels);

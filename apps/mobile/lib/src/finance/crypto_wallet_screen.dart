@@ -11,7 +11,10 @@ import 'crypto_models.dart';
 import 'crypto_state.dart';
 
 class CryptoWalletScreen extends ConsumerStatefulWidget {
-  const CryptoWalletScreen({super.key});
+  const CryptoWalletScreen({super.key, this.embeddedInWallet = false});
+
+  /// Reuses the existing qualified crypto controller inside the unified Wallet.
+  final bool embeddedInWallet;
 
   static String operationTitle(String operation) {
     switch (operation) {
@@ -412,7 +415,7 @@ class _CryptoWalletScreenState extends ConsumerState<CryptoWalletScreen> {
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceCard,
-      appBar: AppBar(
+      appBar: widget.embeddedInWallet ? null : AppBar(
         backgroundColor: u.surfaceCard,
         foregroundColor: u.textPrimary,
         surfaceTintColor: Colors.transparent,
@@ -436,6 +439,18 @@ class _CryptoWalletScreenState extends ConsumerState<CryptoWalletScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
+              if (widget.embeddedInWallet)
+                Row(children: [
+                  Expanded(child: Text(
+                    'Crypto assets', maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  )),
+                  IconButton(
+                    tooltip: 'Refresh crypto balances',
+                    onPressed: _busy ? null : _refreshWallet,
+                    icon: const Icon(Icons.refresh),
+                  ),
+                ]),
               _AssetList(
                 wallet: data,
                 onSelected: (value) {
@@ -625,12 +640,9 @@ class _CapabilityNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final messages = <String>[
-      if (!capabilities.fiatOnRamp)
-        'Buy with fiat is not available until the provider on-ramp is activated.',
-      if (!capabilities.conversions)
-        'Conversions are not currently qualified for this account.',
-      if (!capabilities.withdrawals)
-        'Withdrawals are not currently qualified for this account.',
+      if (!capabilities.fiatOnRamp) 'Buy unavailable',
+      if (!capabilities.conversions) 'Convert unavailable',
+      if (!capabilities.withdrawals) 'Withdraw unavailable',
     ];
     return Container(
       padding: const EdgeInsets.all(14),

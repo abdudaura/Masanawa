@@ -178,12 +178,12 @@ export const BILLING_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
   "Masanawa has a server-controlled NGN wallet and bill-payment tool. Never claim a payment happened unless the runtime returns evidence.",
   "For balance requests, append exactly: <masanawa_action>{\"type\":\"wallet.balance\"}</masanawa_action>.",
   "For requests to add/fund/deposit money, ask only for amount if missing. When known append: <masanawa_action>{\"type\":\"wallet.fund\",\"amount\":\"5000\"}</masanawa_action>.",
-  "For bill purchases, identify service, provider/network/company and recipient. Airtime and electricity need an amount. Data and TV may use the live fixed plan price when the user names a plan, so do not force the user to know its price. Ask only for missing or ambiguous information.",
-  "When complete, append exactly one directive: <masanawa_action>{\"type\":\"billing.quote\",\"service\":\"airtime|data|electricity|tv\",\"provider\":\"provider name\",\"recipient\":\"phone/meter/card\",\"amount\":\"optional decimal NGN amount\",\"plan\":\"optional plan/package/prepaid/postpaid\"}</masanawa_action>.",
+  "Only mobile data bundles can be bought. Do not offer airtime, electricity, cable or TV bills. For data bundles identify network, phone recipient and preferred plan. The provider catalog determines price.",
+  "When complete, append exactly one directive: <masanawa_action>{\"type\":\"billing.quote\",\"service\":\"data\",\"provider\":\"network name\",\"recipient\":\"phone number\",\"plan\":\"bundle/package\"}</masanawa_action>.",
   "If the user says yes/confirm/proceed to the current pending bill, including by voice, append exactly: <masanawa_action>{\"type\":\"billing.confirm\"}</masanawa_action>.",
   "Never ask the user to open a browser or Flutterwave checkout. Funding uses a temporary bank account shown inside Masanawa.",
   "A complete purchase requires one explicit confirmation. Never invent account numbers, balances, billers, plans, tokens, references, or success.",
-  "Understand Nigerian English and Hausa billing phrasing such as kati/katin waya for airtime, wutar lantarki/NEPA for electricity, and saka kudi for funding.",
+  "Understand Nigerian English and Hausa data bundle requests. Explain politely that other bill services are currently unavailable.",
 ]);
 
 export function createAgentBillingAssistant(input: Readonly<{
@@ -230,6 +230,9 @@ export function createAgentBillingAssistant(input: Readonly<{
       return result(walletReply(view), view.document);
     }
 
+    if (directive.service !== "data") {
+      return result("Masanawa currently supports data bundles only. Airtime, electricity and TV purchases are unavailable.");
+    }
     const code = categoryCode(directive.service);
     const categories = list<BillCategory>(
       (await input.billing.listCategories({ authorizationHeader })) as unknown,
@@ -247,7 +250,7 @@ export function createAgentBillingAssistant(input: Readonly<{
     const biller = bestBiller(billers, directive.provider);
     if (!biller) {
       return result(
-        directive.service === "airtime" || directive.service === "data"
+        directive.service === "data"
           ? "Which network should I use: MTN, Airtel, Glo, or 9mobile?"
           : `I could not match "${directive.provider}" to a live provider. Please tell me the provider/company name.`,
       );

@@ -300,6 +300,7 @@ class _SeatTransport implements TalkAiSeatTransport {
       kind: TalkAiPersonaKind.expert,
       seatFeeLabel: '₦300',
       subtitle: 'Learning · Schools',
+      isAvailable: true,
     ),
   ];
 
