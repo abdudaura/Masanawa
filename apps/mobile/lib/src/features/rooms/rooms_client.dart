@@ -14,10 +14,12 @@ class RoomInfo {
   trialMinutes: j['trialMinutes'] is int && (j['trialMinutes'] as int)>0 ? j['trialMinutes'] as int : null);
 }
 class RoomQuestion {
- const RoomQuestion(this.id,this.body,this.status,this.answer);
+ const RoomQuestion(this.id,this.body,this.status,this.answer,{this.authorUserId});
  final String id,body,status;final String? answer;
+ final String? authorUserId;
  factory RoomQuestion.fromJson(Map<String,dynamic> j)=>RoomQuestion(j['questionId'] as String,
-  j['body'] as String,j['state'] as String,j['answer'] as String?);
+  j['body'] as String,j['state'] as String,j['answer'] as String?,
+  authorUserId:j['authorUserId'] is String ? j['authorUserId'] as String : null);
 }
 class RoomLesson {
  const RoomLesson(this.id,this.body,this.kind);
