@@ -134,7 +134,7 @@ void main() {
           expect(find.text('Send'), findsNothing);
           expect(find.text('Withdraw'), findsNothing);
           expect(tester.takeException(), isNull);
-          await tester.scrollUntilVisible(find.text('Data bundle'), 180);
+          await tester.scrollUntilVisible(find.text('Data bundle').first, 180);
           expect(find.text('+9007199254740991 Cr'), findsOneWidget);
           expect(find.text('-75 Cr'), findsOneWidget);
           expect(find.text('Oct 12 2026 · 13:42'), findsOneWidget);
@@ -161,15 +161,16 @@ void main() {
   });
 
   testWidgets(
-    'loading preserves qualified services without invented balances',
+    'loading preserves unified balance/crypto tabs without inventing balances',
     (tester) async {
-      final intents = <String>[];
       final loading = _LoadingWallet();
-      await mount(tester, controller: () => loading, onBilling: intents.add);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await mount(tester, controller: () => loading);
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
       expect(find.text('0 Cr'), findsNothing);
-      await tester.tap(find.text('Airtime'));
-      expect(intents, ['airtime']);
+      expect(find.text('Balance'), findsOneWidget);
+      expect(find.text('Crypto'), findsOneWidget);
+      expect(find.text('Airtime'), findsNothing);
+      expect(find.text('Electricity'), findsNothing);
     },
   );
 
@@ -190,57 +191,18 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('existing qualified Crypto and Billing destinations still open', (
-    tester,
-  ) async {
-    late GoRouter router;
-    router = GoRouter(
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, _) => WalletScreen(
-            onOpenCrypto: () => context.push('/crypto'),
-            onOpenBillingService: (service) =>
-                context.push('/billing?service=$service'),
-          ),
-        ),
-        GoRoute(
-          path: '/crypto',
-          builder: (_, _) => const Scaffold(body: Text('Crypto route')),
-        ),
-        GoRoute(
-          path: '/billing',
-          builder: (_, state) => Scaffold(
-            body: Text('Billing ${state.uri.queryParameters['service']}'),
-          ),
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      ProviderScope(
-        key: UniqueKey(),
-        overrides: [
-          walletProvider.overrideWith(
-            () => _Wallet(_view(amount: 12, empty: true)),
-          ),
-        ],
-        child: MaterialApp.router(
-          theme: buildMasanawaTheme(brightness: Brightness.light),
-          routerConfig: router,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+  testWidgets('main Wallet embeds Crypto as its own tab, without bill shortcuts', (tester) async {
+    await mount(tester, value: _view(amount: 12, empty: true));
+    expect(find.text('Balance'), findsOneWidget);
     await tester.tap(find.text('Crypto'));
     await tester.pumpAndSettle();
-    expect(find.text('Crypto route'), findsOneWidget);
-    router.pop();
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Data bundles'));
-    await tester.pumpAndSettle();
-    expect(find.text('Billing data'), findsOneWidget);
+    expect(find.byType(TabBar), findsOneWidget);
+    expect(find.text('Airtime'), findsNothing);
+    expect(find.text('Electricity'), findsNothing);
+    expect(find.text('TV / Cable'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
+
   testWidgets(
     'only supplied financial callbacks are exposed and work at 320px large text',
     (tester) async {
