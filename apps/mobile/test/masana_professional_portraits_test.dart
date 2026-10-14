@@ -13,23 +13,27 @@ void main(){
   final image=tester.widget<Image>(find.byType(Image));
   expect((image.image as NetworkImage).url,agent.avatarUrl);
  });
- testWidgets('missing owner artwork shows neutral initial, never a placeholder cartoon', (tester) async {
+ testWidgets('bundled photo replaces old animated Gwani portrait', (tester) async {
   const agent=AgentDirectoryEntry(characterId:'gwani',characterVersionId:'v1',displayName:'Gwani',roleLabel:'Support',about:'',presence:AgentPresence.unknown);
   await tester.pumpWidget(const MaterialApp(home:Scaffold(body:MasanaPortraitAvatar(agent:agent))));
   expect(find.byType(SvgPicture), findsNothing);
-  expect(find.text('G'), findsOneWidget);
+  expect(find.byType(Image), findsOneWidget);
+  expect((tester.widget<Image>(find.byType(Image)).image as AssetImage).assetName,
+    'assets/masana/portraits/gwani.webp');
  });
- test('the archived SVG pack remains available only as historical assets',()async{
-  const names=["Mallam Gwani Bodi","Malamah Gwana Sulafat","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
+ test('all 26 real bundled photos are present alongside existing banners',()async{
+  const names=["Gwani","Gwana","Dr. Amina Yusuf","Nurse Fatima Abdullahi","Pharm. Salim Ibrahim","Barr. Zainab Bello","Prof. Sadiq Musa","Engr. Musa Garba","Engr. Bello Shehu","Engr. Umar Lawal","Arc. Safiya Kabir","Prof. Ruqayya Haruna","Dr. Idris Muhammad","Prof. Maryam Usman","Dr. Kabir Ahmad","Prof. Hauwa Sani","Dr. Yusuf Danladi","Prof. Haruna Adamu","Dr. Bilkisu Suleiman","Dr. Nura Abdullahi","Dr. Aisha Tanko","Prof. Abdulrahman Isah","Ustazah Layla Hassan","Prof. Grace Okonkwo","Madam Asha Verma","Prof. Mei Lin"];
   expect(names.length,26);
   for(final name in names){
    final avatar=portraitAssetFor(name);
    final banner=bannerAssetFor(name);
    expect(avatar,isNotNull,reason:name);
    expect(banner,isNotNull,reason:name);
-   expect((await rootBundle.loadString(avatar!)).contains('<svg'),true);
+   expect(avatar!.endsWith('.webp'),true);
+   expect((await rootBundle.load(avatar)).lengthInBytes,greaterThan(1000));
    expect((await rootBundle.loadString(banner!)).contains('<svg'),true);
   }
   expect(portraitAssetFor('Admin-managed custom AI'),isNull);
+  expect(portraitAssetFor('Mallam Gwani Bodi'),isNull);
  });
 }
