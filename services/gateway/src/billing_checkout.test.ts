@@ -639,41 +639,26 @@ describe("billing checkout", () => {
       customerId: "+2348012345678",
       amount: "100",
     });
-    const quotedDoc = quoted.document as {
-      id: string;
-      revision: number;
-      nodes: Array<{ action?: string; token?: string }>;
-    };
-    const start = quotedDoc.nodes.find((node) => node.action === "billing.checkout.start")!;
+    // The modern quote document starts a canonical wallet purchase. Hosted
+    // checkout still has a direct compatibility service for already-created
+    // links and historical settlement; exercise that service explicitly.
     at = "2026-10-04T20:00:30.000Z";
-    const checkoutExecution = await service.executeShellAction({
+    const checkout = await service.startCheckout({
       authorizationHeader: "Bearer session",
-      documentId: quotedDoc.id,
-      revision: quotedDoc.revision,
-      actionId: "billing.checkout.start",
-      token: start.token!,
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
     });
-    const checkoutDoc = checkoutExecution.document as {
-      id: string;
-      revision: number;
-      expiresAt: string;
-      nodes: Array<{ action?: string; token?: string }>;
-    };
-    const verify = checkoutDoc.nodes.find((node) => node.action === "billing.checkout.verify")!;
-
+    const checkoutDoc = checkout.document as { expiresAt: string };
     expect(Date.parse(checkoutDoc.expiresAt)).toBeGreaterThan(
       Date.parse(quoted.quote.expiresAt),
     );
 
-    // The economic quote has expired, but this checkout was legitimately
-    // created before expiry and remains in its bounded hosted-payment grace.
+    // The economic quote expired, but hosted payment was created beforehand.
     at = "2026-10-04T20:02:00.000Z";
-    const verified = await service.executeShellAction({
+    const verified = await service.verifyAndPurchase({
       authorizationHeader: "Bearer session",
-      documentId: checkoutDoc.id,
-      revision: checkoutDoc.revision,
-      actionId: "billing.checkout.verify",
-      token: verify.token!,
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
     });
 
     expect(verified.phase).toBe("fulfilled");
