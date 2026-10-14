@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../chat/chat_format.dart';
 import '../../core/startup_metrics.dart';
 import '../../chat/message_parts.dart';
-import '../../finance/crypto_wallet_screen.dart';
 import '../../features/masana_chat/inbox_search.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
@@ -388,13 +387,7 @@ class ChatListScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'Wallet',
             icon: const Icon(Icons.account_balance_wallet_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CryptoWalletScreen(),
-                ),
-              );
-            },
+            onPressed: () => context.go('/home?tab=wallet'),
           ),
           IconButton(
             tooltip: 'New chat',
