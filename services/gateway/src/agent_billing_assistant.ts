@@ -250,7 +250,7 @@ export function createAgentBillingAssistant(input: Readonly<{
     const biller = bestBiller(billers, directive.provider);
     if (!biller) {
       return result(
-        directive.service === "airtime" || directive.service === "data"
+        directive.service === "data"
           ? "Which network should I use: MTN, Airtel, Glo, or 9mobile?"
           : `I could not match "${directive.provider}" to a live provider. Please tell me the provider/company name.`,
       );
