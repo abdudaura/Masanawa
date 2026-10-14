@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'rooms_client.dart';
 import 'saved_lessons_client.dart';
 import 'saved_lessons_screen.dart';
-const masanaBlue=Color(0xFF075E54);
 
 /// Host session must guard details pushed beyond the account-keyed tab.
 typedef RoomDetailProtector = Widget Function(BuildContext routeContext, Widget detail);
@@ -398,7 +397,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
      if(tab==1)SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
        Expanded(child:TextField(controller:question,maxLength:2000,maxLines:2,
         decoration:const InputDecoration(hintText:'Ask your teacher',border:OutlineInputBorder()))),
-       IconButton(icon:const Icon(Icons.send,color:masanaBlue),onPressed:busy?null:ask,tooltip:'Send question'),
+       IconButton(icon:Icon(Icons.send,color:Theme.of(context).colorScheme.primary),onPressed:busy?null:ask,tooltip:'Send question'),
      ]))),
     ]else Expanded(child:Center(child:Text(info!.paid?'A verified subscription is required to access lessons and questions':'Join to see lessons and ask questions'))),
    ])
