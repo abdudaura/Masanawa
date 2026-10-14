@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/masanawa_theme.dart';
 
-/// The Masanawa conversation lettermark, shared with the native launcher.
+/// The Masanawa conversation mark, shared with the native launcher.
 /// Keep the packaged artwork as the source of truth for the brand.
 class MasanawaMark extends StatelessWidget {
   const MasanawaMark({

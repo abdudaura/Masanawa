@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Keep these native startup colors aligned with MasanawaTokens.light. -->
-    <color name="ic_launcher_background">#0A6FFA</color>
+    <color name="ic_launcher_background">#25D366</color>
     <color name="masanawa_launch_background">#25D366</color>
     <color name="masanawa_brand_green">#25D366</color>
     <color name="masanawa_surface">#FFFFFF</color>

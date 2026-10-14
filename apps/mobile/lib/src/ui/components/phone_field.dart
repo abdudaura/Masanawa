@@ -17,12 +17,14 @@ class PhoneField extends StatefulWidget {
     this.autofocus = false,
     this.onCountryChanged,
     this.enabled = true,
+    this.initialCountry = kDefaultCountry,
   });
 
   final TextEditingController controller;
   final bool autofocus;
   final ValueChanged<PhoneCountry>? onCountryChanged;
   final bool enabled;
+  final PhoneCountry initialCountry;
 
   @override
   State<PhoneField> createState() => _PhoneFieldState();
@@ -34,7 +36,10 @@ class _PhoneFieldState extends State<PhoneField> {
   @override
   void initState() {
     super.initState();
-    _country = detectCountry(widget.controller.text);
+    final raw = widget.controller.text.trim();
+    _country = raw.startsWith('+') || raw.startsWith('00')
+        ? detectCountry(raw)
+        : widget.initialCountry;
     widget.controller.addListener(_onControllerChanged);
   }
 

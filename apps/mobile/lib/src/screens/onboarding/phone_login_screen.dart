@@ -222,6 +222,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             else
               PhoneField(
                 controller: _phone,
+                initialCountry: _phoneCountry,
                 autofocus: true,
                 enabled: !sending && !_checking,
                 onCountryChanged: (country) => _phoneCountry = country,
