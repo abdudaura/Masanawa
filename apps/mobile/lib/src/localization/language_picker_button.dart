@@ -8,6 +8,7 @@ import 'masanawa_localization.dart';
 /// language even when the current UI locale is unfamiliar.
 const _languageAutonyms = <String, String>{
   'en': 'English',
+  'ha': 'Hausa',
   'ar': 'العربية',
   'fr': 'Français',
   'es': 'Español',
@@ -31,7 +32,8 @@ class _LanguagePickerButtonState extends State<LanguagePickerButton> {
     if (_saving) return;
     final controller = LocalePreferenceScope.of(context);
     final strings = AppLocalizations.of(context);
-    final currentCode = controller.localeOverride?.languageCode ?? _deviceChoice;
+    final currentCode =
+        controller.localeOverride?.languageCode ?? _deviceChoice;
 
     final picked = await showModalBottomSheet<String>(
       context: context,
@@ -64,19 +66,19 @@ class _LanguagePickerButtonState extends State<LanguagePickerButton> {
               for (final locale in MasanawaLocalization.supportedLocales)
                 ListTile(
                   key: Key('language-${locale.languageCode}'),
-                  title: Text(_languageAutonyms[locale.languageCode] ??
-                      locale.languageCode),
+                  title: Text(
+                    _languageAutonyms[locale.languageCode] ??
+                        locale.languageCode,
+                  ),
                   trailing: currentCode == locale.languageCode
-                      ? const Icon(Icons.check, semanticLabel: 'Selected')
+                      ? Icon(
+                          Icons.check,
+                          semanticLabel: strings.languageSelected,
+                        )
                       : null,
-                  onTap: () => Navigator.of(sheetContext).pop(locale.languageCode),
+                  onTap: () =>
+                      Navigator.of(sheetContext).pop(locale.languageCode),
                 ),
-              ListTile(
-                key: const Key('language-ha-unavailable'),
-                enabled: false,
-                title: const Text('Hausa'),
-                subtitle: Text(strings.languageHausaUnavailable),
-              ),
               const SizedBox(height: 12),
               Text(
                 strings.languagePreviewNotice,
@@ -91,13 +93,13 @@ class _LanguagePickerButtonState extends State<LanguagePickerButton> {
     if (!mounted || picked == null || picked == currentCode) return;
     setState(() => _saving = true);
     try {
-      await controller.select(
-        picked == _deviceChoice ? null : Locale(picked),
-      );
+      await controller.select(picked == _deviceChoice ? null : Locale(picked));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).languageSaveFailed)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).languageSaveFailed),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);

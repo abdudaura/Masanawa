@@ -5,7 +5,7 @@ import 'package:masanawa/src/localization/masanawa_localization.dart';
 void main() {
   test('only enable UI locales supported by Flutter delegates', () {
     expect(MasanawaLocalization.supportedLocales.map((e) => e.languageCode),
-        ['en', 'ar', 'fr', 'es', 'pt']);
+        ['en', 'ha', 'ar', 'fr', 'es', 'pt']);
   });
 
   test('country variants resolve to a supported UI language', () {

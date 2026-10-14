@@ -1,5 +1,5 @@
 /// Phone-number country mapping. The login screen auto-detects the user's
-/// country from the dial code they type — no manual country picker needed.
+/// country from an explicit international prefix or manual country selection.
 ///
 /// Rule: a leading `+` (or `00`) means "international" and is matched against
 /// known dial codes (longest match wins). A leading `0` or a bare national
@@ -21,11 +21,19 @@ class PhoneCountry {
   String get displayCode => dialCode.isEmpty ? '' : '+$dialCode';
 }
 
-const PhoneCountry kDefaultCountry =
-    PhoneCountry(dialCode: '234', iso: 'NG', name: 'Nigeria', flag: '🇳🇬');
+const PhoneCountry kDefaultCountry = PhoneCountry(
+  dialCode: '234',
+  iso: 'NG',
+  name: 'Nigeria',
+  flag: '🇳🇬',
+);
 
-const PhoneCountry kUnknownCountry =
-    PhoneCountry(dialCode: '', iso: 'UN', name: 'Unknown region', flag: '🌍');
+const PhoneCountry kUnknownCountry = PhoneCountry(
+  dialCode: '',
+  iso: 'UN',
+  name: 'Unknown region',
+  flag: '🌍',
+);
 
 const List<PhoneCountry> kPhoneCountries = [
   PhoneCountry(dialCode: '234', iso: 'NG', name: 'Nigeria', flag: '🇳🇬'),
@@ -80,29 +88,22 @@ PhoneCountry detectCountry(String raw) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) return kDefaultCountry;
   var digits = trimmed.replaceAll(RegExp(r'\D'), '');
-  if (trimmed.startsWith('00')) digits = digits.replaceFirst(RegExp(r'^00'), '');
-  final international =
-      trimmed.startsWith('+') || trimmed.startsWith('00');
-  if (!international) {
-    if (digits.startsWith('0')) return kDefaultCountry;
-    // Bare digits that open with a known code (e.g. `234801...`).
-    for (final c in _byLengthDesc) {
-      if (digits.startsWith(c.dialCode)) return c;
-    }
-    return kDefaultCountry;
+  if (trimmed.startsWith('00')) {
+    digits = digits.replaceFirst(RegExp(r'^00'), '');
   }
+  final international = trimmed.startsWith('+') || trimmed.startsWith('00');
+  if (!international) return kDefaultCountry;
   for (final c in _byLengthDesc) {
     if (digits.startsWith(c.dialCode)) return c;
   }
   return kUnknownCountry;
 }
 
-final List<PhoneCountry> _byLengthDesc = [
-  ...kPhoneCountries,
-]..sort((a, b) => b.dialCode.length.compareTo(a.dialCode.length));
+final List<PhoneCountry> _byLengthDesc = [...kPhoneCountries]
+  ..sort((a, b) => b.dialCode.length.compareTo(a.dialCode.length));
 
 /// Normalizes free-typed input to `+`-prefixed E.164.
-String normalizeE164(String raw) {
+String normalizeE164(String raw, {PhoneCountry country = kDefaultCountry}) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) return '';
   final digits = trimmed.replaceAll(RegExp(r'\D'), '');
@@ -112,12 +113,11 @@ String normalizeE164(String raw) {
     final rest = digits.replaceFirst(RegExp(r'^00'), '');
     return rest.isEmpty ? '' : '+$rest';
   }
-  if (digits.startsWith('0')) {
-    final rest = digits.replaceFirst(RegExp(r'^0+'), '');
-    return rest.isEmpty ? '' : '+234$rest';
-  }
-  for (final c in _byLengthDesc) {
-    if (digits.startsWith(c.dialCode)) return '+$digits';
-  }
-  return '+234$digits';
+  // National digits belong to the selected country. Never infer a dial code
+  // from a partially typed local number. Italy keeps its significant zero.
+  final national = country.iso == 'IT'
+      ? digits
+      : digits.replaceFirst(RegExp(r'^0+'), '');
+  if (national.isEmpty || country.dialCode.isEmpty) return '';
+  return '+${country.dialCode}$national';
 }
