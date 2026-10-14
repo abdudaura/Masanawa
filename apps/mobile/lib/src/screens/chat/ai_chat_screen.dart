@@ -387,18 +387,31 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   void _micHoldEnd() {
     final cancel = _heldMicCancelled;
     final locked = _heldMicLocked;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final composer = _voiceComposerKey.currentState;
-      if (composer == null) return;
-      if (cancel) {
-        unawaited(composer.cancelFromGesture());
-      } else if (locked) {
-        composer.lockRecording();
-      } else {
-        unawaited(composer.sendOnRelease());
+    // The finger can be released before Flutter has mounted the inline
+    // recorder. Retry a bounded number of frames rather than discarding it.
+    Future<void> deliver() async {
+      for (var attempt = 0; attempt < 8; attempt++) {
+        if (!mounted || _recordingAccountId == null) return;
+        final composer = _voiceComposerKey.currentState;
+        if (composer != null) {
+          if (cancel) {
+            await composer.cancelFromGesture();
+          } else if (locked) {
+            composer.lockRecording();
+          } else {
+            await composer.sendOnRelease();
+          }
+          return;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 30));
       }
-    });
+      // Never leave a secretly running microphone after an unmounted gesture.
+      if (!locked) {
+        await _localRecorder?.cancel();
+        if (_recordingDone?.isCompleted == false) _recordingDone!.complete();
+      }
+    }
+    unawaited(deliver());
   }
 
   /// Record a local voice message, without starting a paid LiveKit/Gemini call.
@@ -1094,7 +1107,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   if (!mounted || active is! SessionSignedIn ||
                       active.user.id != _recordingAccountId ||
                       ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return false;
-                  await ref.read(aiChatProvider.notifier).sendAttachment(widget.characterId, attachment);
+                  // Enqueue in the same authenticated chat controller immediately.
+                  // Do not hold the recorder UI open while waiting for the
+                  // whole provider/agent response. Its bubble tracks upload,
+                  // delivery and failures independently.
+                  unawaited(ref.read(aiChatProvider.notifier)
+                      .sendAttachment(widget.characterId, attachment));
                   return mounted;
                 }),
             if (_showEmoji)
