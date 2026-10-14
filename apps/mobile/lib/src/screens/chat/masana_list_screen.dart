@@ -22,7 +22,14 @@ class MasanaListScreen extends ConsumerStatefulWidget {
 }
 
 class _MasanaListState extends ConsumerState<MasanaListScreen> {
+  final _searchController = TextEditingController();
   String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
@@ -142,9 +149,21 @@ class _MasanaListState extends ConsumerState<MasanaListScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: TextField(
-            decoration: const InputDecoration(
-              hintText: 'Search Masana',
-              prefixIcon: Icon(Icons.search),
+            controller: _searchController,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Search by name or expertise',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      tooltip: 'Clear Masana search',
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                    )
+                  : null,
             ),
             onChanged: (value) => setState(() => _query = value.trim()),
           ),
