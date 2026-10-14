@@ -2161,11 +2161,13 @@
       "claimed_at": "2026-10-14T06:06:18.973Z",
       "heartbeat_at": "2026-10-14T06:06:18.973Z",
       "expires_at": "2026-10-14T09:06:18.973Z",
-      "scope": "AF07 created portrait presentation precedence and regression tests; master owner checklist",
+      "scope": "AF07 created portrait presentation precedence and regression tests; master owner checklist; visible narrow AF00 chat response reconciliation expansion for owner-reported duplicate audio replies",
       "paths": [
         "apps/mobile/lib/src/agents/masana_portrait_avatar.dart",
         "apps/mobile/test/masana_professional_portraits_test.dart",
-        "docs/superpowers/plans/2026-10-14-owner-mobile-corrections.md"
+        "docs/superpowers/plans/2026-10-14-owner-mobile-corrections.md",
+        "apps/mobile/lib/src/state/ai_chat_state.dart",
+        "apps/mobile/test/voice_reply_deduplication_test.dart"
       ]
     }
   ],
