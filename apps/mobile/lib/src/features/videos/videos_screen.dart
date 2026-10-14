@@ -35,6 +35,9 @@ class ExternalVideosScreen extends StatefulWidget {
 }
 
 class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
+  // Provider is a playback/security property, not a discovery filter.
+  // Preserve server catalogue order as 'Recent' (never invent duration).
+  String sortOrder = 'recent';
   String? filter;
   late Future<List<ExternalVideo>> future;
   int generation = 0;
@@ -130,18 +133,25 @@ class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
         'Ba a samun bidiyo a yanzu')));
     }
     return Column(children: [
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(children: [
-          for (final p in <String?>[null, 'youtube', 'tiktok', 'facebook'])
-            Padding(
-              padding: const EdgeInsets.all(4),
-              child: ChoiceChip(
-                label: Text(p ?? t('All', 'Duka')),
-                selected: filter == p, onSelected: (_) => reload(p),
+      // Sorting only uses fields actually supplied by the approved catalog.
+      // Short/long duration is intentionally NOT exposed without metadata.
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Wrap(spacing: 8, runSpacing: 3, children: [
+            for (final item in const <String>['recent', 'title', 'channel'])
+              ChoiceChip(
+                label: Text(switch (item) {
+                  'title' => t('Title A–Z', 'Suna A–Z'),
+                  'channel' => t('Channel A–Z', 'Tasha A–Z'),
+                  _ => t('Recent', 'Na baya-bayan nan'),
+                }),
+                selected: sortOrder == item,
+                onSelected: (_) => setState(() => sortOrder = item),
               ),
-            ),
-        ]),
+          ]),
+        ),
       ),
       Expanded(child: FutureBuilder<List<ExternalVideo>>(
         future: future,
@@ -162,6 +172,11 @@ class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
             for (final item in [...?snapshot.data, ...additional])
               if (seen.add(item.id)) item,
           ];
+          if (sortOrder == 'title') {
+            items.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+          } else if (sortOrder == 'channel') {
+            items.sort((a, b) => a.channelName.toLowerCase().compareTo(b.channelName.toLowerCase()));
+          }
           if (items.isEmpty) {
             return Center(child: Column(mainAxisSize: MainAxisSize.min,
               children: [
