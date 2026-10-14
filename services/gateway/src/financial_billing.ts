@@ -1,3 +1,4 @@
+import { requireDataBundleCategory, isDataBundleCategory } from "./billing_data_policy.js";
 import type { BillingFundingAuthority } from "@masanawa/commerce";
 import {
   BillingCommerceOrchestrator,
@@ -258,11 +259,13 @@ export function createBillingFinancialService(input: Readonly<{
   return Object.freeze<BillingFinancialService>({
     async listCategories(request) {
       await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
-      return provider.listCategories(request.signal);
+      return (await provider.listCategories(request.signal))
+        .filter((category) => isDataBundleCategory(category.code));
     },
 
     async listBillers(request) {
       await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
+      requireDataBundleCategory(request.categoryCode);
       return provider.listBillers(request.categoryCode, request.signal);
     },
 
@@ -275,6 +278,10 @@ export function createBillingFinancialService(input: Readonly<{
       const identity = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
       });
+      // Public new purchase route must never bypass the quote-service filter.
+      // purchaseOwned remains available exclusively for canonical already
+      // reserved legacy settlement recovery after the product retirement.
+      requireDataBundleCategory(request.categoryCode ?? "");
       if (!request.quoteId?.trim() || !Number.isSafeInteger(request.quoteRevision)) {
         throw new Error("financial.billing.confirmed_quote_required");
       }
