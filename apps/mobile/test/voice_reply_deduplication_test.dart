@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/agents/agent_shell.dart';
 import 'package:masanawa/src/agents/agent_session.dart';
@@ -47,6 +48,13 @@ class _Transport extends RecoveringTransport implements AgentShellTransport {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test('completed event racing with audio response keeps one reply', () async {
+    // The widget test process has no native path_provider plugin. Provide a
+    // real writable temporary folder for the reply WAV attachment.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (_) async => Directory.systemTemp.path,
+      );
     final file=File('${Directory.systemTemp.path}/masanawa_dedupe_${DateTime.now().microsecondsSinceEpoch}.m4a');
     await file.writeAsBytes([1,2,3]);
     addTearDown(()=>file.delete());
