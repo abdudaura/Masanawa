@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:masanawa/src/commerce/wallet_models.dart';
 import 'package:masanawa/src/screens/wallet/wallet_screen.dart';
 import 'package:masanawa/src/state/wallet_state.dart';
