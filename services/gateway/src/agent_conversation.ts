@@ -112,18 +112,28 @@ export function createAgentConversationService(input: {
     signal?: AbortSignal,
     onAudioPcmChunk?: (dataBase64: string) => void | Promise<void>,
     persona?: {displayName:string;roleLabel:string},
+    required = false,
   ) {
-    if (!input.nativeAudio || signal?.aborted) return undefined;
-    return input.nativeAudio
-      .render(
+    if (signal?.aborted) throw new Error("Voice reply rendering was cancelled");
+    if (!input.nativeAudio) {
+      if (required) throw new Error("Audio reply service is unavailable");
+      return undefined;
+    }
+    try {
+      return await input.nativeAudio.render(
         reply,
         signal,
         onAudioPcmChunk
           ? async (chunk) => onAudioPcmChunk(chunk.toString("base64"))
           : undefined,
         persona,
-      )
-      .catch(() => undefined);
+      );
+    } catch (error) {
+      // Voice inputs cannot be marked complete with a text-only response.
+      // Non-voice text chats can still receive text if optional TTS is down.
+      if (required) throw error;
+      return undefined;
+    }
   }
 
   const service: AgentConversationService = {
@@ -466,6 +476,14 @@ export function createAgentConversationService(input: {
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
+        // Generate the required playable reply BEFORE the turn is completed.
+        // A TTS failure must remain retryable and never emit turn.completed.
+        const requiresVoiceReply = mimeType.toLowerCase().startsWith("audio/");
+        const audio = await renderAudio(
+          reply, request.signal, undefined, admission.presentation,
+          requiresVoiceReply,
+        );
+
         await input.runs.finish({
           authority: admission.authority,
           scope: admission.scope,
@@ -501,7 +519,6 @@ export function createAgentConversationService(input: {
           referenceId: request.requestId,
         }).catch(() => undefined);
 
-        const audio = await renderAudio(reply, request.signal, undefined, admission.presentation);
         return Object.freeze({
           reply,
           agentRunId,
@@ -658,6 +675,13 @@ export function createAgentConversationService(input: {
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
+        const requiresVoiceReply = media.some((item) =>
+          item.mimeType.toLowerCase().startsWith("audio/"));
+        const audio = await renderAudio(
+          reply, request.signal, undefined, admission.presentation,
+          requiresVoiceReply,
+        );
+
         await input.runs.finish({
           authority: admission.authority,
           scope: admission.scope,
@@ -685,7 +709,6 @@ export function createAgentConversationService(input: {
           });
         }
 
-        const audio = await renderAudio(reply, request.signal, undefined, admission.presentation);
         return Object.freeze({
           reply,
           agentRunId,
