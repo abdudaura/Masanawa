@@ -96,7 +96,7 @@ void main() {
     for (final locale in ['en', 'ha', 'ar']) {
       for (final scale in [1.0, 2.0]) {
         testWidgets(
-          'combined shell $width $locale ${scale}x search/tab/crypto Back',
+          'combined shell $width $locale ${scale}x search/tab/embedded crypto',
           (tester) async {
             tester.view.physicalSize = Size(width, 900);
             tester.view.devicePixelRatio = 1;
@@ -271,9 +271,10 @@ void main() {
             await tester.tap(find.text('Crypto'));
             await tester.pumpAndSettle();
             expect(find.byType(CryptoWalletScreen), findsOneWidget);
-            expect(find.byType(NavigationBar), findsNothing);
+            // Crypto is now a section of the main Wallet, not another route.
+            expect(find.byType(NavigationBar), findsOneWidget);
             await save('crypto');
-            await tester.tap(find.byType(BackButton));
+            await tester.tap(find.text('Balance'));
             await tester.pumpAndSettle();
             expect(
               tester
