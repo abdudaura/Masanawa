@@ -134,7 +134,13 @@ void main() {
           expect(find.text('Send'), findsNothing);
           expect(find.text('Withdraw'), findsNothing);
           expect(tester.takeException(), isNull);
-          await tester.scrollUntilVisible(find.text('Data bundle').first, 180);
+          await tester.scrollUntilVisible(
+            find.text('Data bundle').first,
+            180,
+            scrollable: find.byWidgetPredicate((widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down).first,
+          );
           expect(find.text('+9007199254740991 Cr'), findsOneWidget);
           expect(find.text('-75 Cr'), findsOneWidget);
           expect(find.text('Oct 12 2026 · 13:42'), findsOneWidget);
