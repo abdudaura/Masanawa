@@ -556,7 +556,8 @@ class AiChatController extends Notifier<AiChatState> {
     for (final message in thread.messages.where(
       (m) => m.isUser &&
           m.requestId != null &&
-          {'sending', 'queued', 'processing', 'failed'}.contains(m.deliveryStatus),
+          {'sending', 'uploading', 'queued', 'processing', 'failed'}
+               .contains(m.deliveryStatus),
     )) {
       try {
         final status = await transport.turnStatus(characterId, message.requestId!);
@@ -1734,7 +1735,9 @@ class AiChatController extends Notifier<AiChatState> {
         messages[i] = message.copyWith(deliveryStatus: 'stopped');
         continue;
       }
-      if (message.isUser && message.deliveryStatus == 'sending') {
+      if (message.isUser &&
+          (message.deliveryStatus == 'sending' ||
+           message.deliveryStatus == 'uploading')) {
         messages[i] = message.copyWith(deliveryStatus: 'stopped');
         break;
       }
