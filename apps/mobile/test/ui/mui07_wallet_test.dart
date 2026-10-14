@@ -135,7 +135,7 @@ void main() {
           expect(find.text('Withdraw'), findsNothing);
           expect(tester.takeException(), isNull);
           await tester.scrollUntilVisible(
-            find.text('Data bundle').first,
+            find.text('Data bundle'),
             180,
             scrollable: find.byWidgetPredicate((widget) =>
                 widget is Scrollable &&
