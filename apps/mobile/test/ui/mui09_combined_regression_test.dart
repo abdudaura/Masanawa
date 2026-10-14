@@ -292,9 +292,9 @@ void main() {
               findsOneWidget,
             );
             await tab(1);
-            expect(find.text('Couldn’t load Talks right now.'), findsOneWidget);
+            expect(find.text('Sign in to view Status updates.'), findsOneWidget);
             await save('status-unavailable');
-            // Status/Rooms still mount legacy Talk resources; acceptance remains OPEN.
+            // Signed-out Status and Rooms remain isolated and never mount private data.
             await tab(0);
             expect(
               tester.widget<TextField>(find.byType(TextField)).controller!.text,
