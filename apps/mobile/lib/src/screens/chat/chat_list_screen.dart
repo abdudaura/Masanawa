@@ -335,7 +335,7 @@ class ChatListScreen extends ConsumerWidget {
     activityText.dispose();
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: masanawaMainHeader(
         context,
         bottom: activity.isEmpty && chat.online
@@ -348,7 +348,7 @@ class ChatListScreen extends ConsumerWidget {
                       : () => _showActivity(context, directory, activity),
                   child: Container(
                     width: double.infinity,
-                    color: u.surfaceBg,
+                    color: u.surfaceCard,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 8,
@@ -398,7 +398,7 @@ class ChatListScreen extends ConsumerWidget {
             tooltip: 'Settings & profile',
             icon: CircleAvatar(
               radius: 14,
-              backgroundColor: u.surfaceBg,
+              backgroundColor: u.surfaceCard,
               child: Text(
                 userName.isNotEmpty ? userName[0].toUpperCase() : 'M',
                 style: TextStyle(
