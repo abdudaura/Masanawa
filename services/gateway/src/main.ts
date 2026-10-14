@@ -301,6 +301,7 @@ import {
 } from "./whatsapp_linked_device.js";
 import {
   ensureDefaultPlatformAgents,
+  PROFESSIONAL_MASANA_CATALOG,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
 import {
@@ -860,7 +861,13 @@ export async function startGatewayService(
       ...(database.callHistory ? { callHistory: database.callHistory } : {}),
       ...(database.platformAgentProfiles ? { platformProfiles: database.platformAgentProfiles } : {}),
       model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
-      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Bodi",
+      resolveVoice: async (name) => {
+        if (!PROFESSIONAL_MASANA_CATALOG.some((seed) => seed.displayName === name)) return undefined;
+        const assigned = (await loadMasanaVoiceAssignments(alphaGeminiApiKey)).get(name);
+        if (!assigned) throw new Error("google.voice_profile_missing");
+        return assigned;
+      },
     });
   }
 
@@ -1346,6 +1353,12 @@ export async function startGatewayService(
           ...(database.platformAgentProfiles ? { platformProfiles: database.platformAgentProfiles } : {}),
           model: liveModel,
           voiceName: liveVoice,
+          resolveVoice: async (name) => {
+            if (!PROFESSIONAL_MASANA_CATALOG.some((seed) => seed.displayName === name)) return undefined;
+            const assigned = (await loadMasanaVoiceAssignments(liveApiKey)).get(name);
+            if (!assigned) throw new Error("google.voice_profile_missing");
+            return assigned;
+          },
           ...(twinProduction
             ? { paidVoiceAdmission: twinProduction.voiceAdmissionGate }
             : {}),
