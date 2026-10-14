@@ -20,8 +20,8 @@ describe('official Google extended catalog voice assignment', () => {
     const map = assignMasanaVoices(voices);
     expect(map.size).toBe(PROFESSIONAL_MASANA_CATALOG.length);
     expect(new Set(map.values()).size).toBe(map.size);
-    expect(map.get('Mallam Gwani Bodi')).toBe('voice-resource-0');
-    expect(map.get('Malamah Gwana Sulafat')).toBe('voice-resource-1');
+    expect(map.get('Gwani')).toBe('voice-resource-0');
+    expect(map.get('Gwana')).toBe('voice-resource-1');
     expect([...map.values()].every(id => id.startsWith('voice-resource-'))).toBe(true);
   });
 
