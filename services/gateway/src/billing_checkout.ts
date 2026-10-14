@@ -703,7 +703,7 @@ export function createBillingCheckoutService(input: Readonly<{
       const owned = await ownedQuote(request.authorizationHeader,request.quoteId);
       // Existing paid legacy purchases can still be reconciled via verify/read,
       // but an unstarted non-data quote must not open a NEW checkout.
-      requireDataBundleCategory(owned.quote.categoryCode);
+      requireDataBundleCategory(owned.quote.categoryCode ?? "");
       if (owned.quote.revision !== request.quoteRevision) {
         throw new Error("financial.billing.quote_revision_conflict");
       }
