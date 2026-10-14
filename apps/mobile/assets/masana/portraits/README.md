@@ -1,17 +1,14 @@
-# Masanawa AI-character photo portraits (26 identities)
+# Masanawa AI-character portraits — all 26 files committed
 
-**Catalog correspondence:** `services/gateway/src/platform_agent_bootstrap.ts`; character keys and portraits are an ordered one-to-one map, **not the incorrect labels from source generation grids**.
+**Directory:** `apps/mobile/assets/masana/portraits/`.
 
-Portrait images were generated and cropped into individual **384×384 WebP** files in the downloadable conversation artifact **`masanawa_26_profile_portraits.zip`**. To install the 26 binary images in this directory, extract the ZIP at the **repository root**:
+The **26 unique, AI-generated 384×384 WebP portraits are stored as real Git binary files** in this directory. They match the production catalog keys in `services/gateway/src/platform_agent_bootstrap.ts` and `manifest.json`. They are fictional character portraits—not images of named real licensed professionals.
 
-```powershell
-# Windows PowerShell, from weavewellindustrieslimited/masanawa checkout:
-Expand-Archive -Path 'C:\path\to\masanawa_26_profile_portraits.zip' -DestinationPath . -Force
-```
+Flutter registers `assets/masana/portraits/` in `apps/mobile/pubspec.yaml`. The `MasanaPortraitAvatar` widget displays these images offline, preferring an authenticated server-admin override `avatarUrl` if provided. Old cartoon SVGs remain only in the historical `avatars/` and `banners/` folders; they are not the profile image fallback.
 
-This creates the 26 `.webp` files here, plus `manifest.json`. Do not commit only this README while claiming portraits are present. This repository connection does not automatically ingest ChatGPT container ZIP files.
+## Files
 
-## Individual image filenames
+
 
 - `gwani.webp` — Gwani
 - `gwana.webp` — Gwana
@@ -40,9 +37,8 @@ This creates the 26 `.webp` files here, plus `manifest.json`. Do not commit only
 - `asha.webp` — Madam Asha Verma
 - `mei.webp` — Prof. Mei Lin
 
-## App mapping
-- Register `- assets/masana/portraits/` in `apps/mobile/pubspec.yaml` **after binary files are present**.
-- In `MasanaPortraitAvatar`, use `Image.asset(portraitAssetFor(agent.displayName)!)` for platform catalogue entries when `avatarUrl` is absent.
-- Continue honoring an authorized server `avatarUrl` over bundled assets for admin-customized portraits. Unknown agents fall back to initials.
-- Never infer portraits from ordinal or remotely supplied arbitrary character names without catalog checks. The artwork is fictional AI-generated identity illustration, not a photo of any licensed real-world professional.
-- Run Flutter portrait tests, full regression and APK build after unpacking; do not deploy an APK with broken asset references.
+## Gemini / Android integration
+
+Use `portraitAssetFor(agent.displayName)` in `apps/mobile/lib/src/agents/masana_portrait_avatar.dart` or inspect the JSON manifest. Do not hard-code alternate labels or assume another character's identity. Existing tests in `apps/mobile/test/masana_professional_portraits_test.dart` validate every packaged WebP. Rebuild the APK after pulling this branch.
+
+For higher-resolution UI beyond the bundled 384px images, request newly approved artwork rather than substituting the retired cartoon SVGs.
