@@ -34,9 +34,12 @@ class MasanaPortraitAvatar extends StatelessWidget{
     : Image.asset(localAsset,width:size,height:size,fit:BoxFit.cover,
         semanticLabel:'AI portrait of ${agent.displayName}',
         errorBuilder:(_,_,_)=>_initial(context));
-  // A server-configured portrait overrides the bundled identity photo.
-  // Unknown/admin custom profiles never inherit another stock persona's face.
-  final portrait=url==null||url.isEmpty?fallback():
+  // Old server SVG/cartoon avatar URLs cannot override the approved photo
+  // pack. Admin-assigned raster photos continue to take precedence.
+  final isRetiredIllustration=localAsset!=null &&
+      (Uri.tryParse(url ?? '')?.path.toLowerCase().endsWith('.svg')==true ||
+       (url ?? '').toLowerCase().contains('/masana/avatars/'));
+  final portrait=url==null||url.isEmpty||isRetiredIllustration?fallback():
     Uri.tryParse(url)?.path.toLowerCase().endsWith('.svg')==true?
       SvgPicture.network(url,width:size,height:size,fit:BoxFit.cover,
         semanticsLabel:'AI portrait of ${agent.displayName}',
