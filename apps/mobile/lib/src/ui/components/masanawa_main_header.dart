@@ -50,7 +50,9 @@ AppBar masanawaMainHeader(
 
   return AppBar(
     backgroundColor: colors.surfaceCard,
-    foregroundColor: colors.textPrimary,
+    foregroundColor: colors.brand,
+    iconTheme: IconThemeData(color: colors.brand),
+    actionsIconTheme: IconThemeData(color: colors.brand),
     surfaceTintColor: Colors.transparent,
     elevation: 0,
     automaticallyImplyLeading: false,
