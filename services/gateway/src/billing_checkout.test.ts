@@ -191,17 +191,17 @@ function providerTransport(verifiedAmount = "101"): FlutterwaveBillsTransport {
     async request(request) {
       if (request.method === "GET" && request.path === "/v3/top-bill-categories") {
         return { status: 200, body: { status: "success", data: [{
-          code: "AIRTIME", name: "Airtime", description: "Airtime", country_code: "NG",
+          code: "MOBILEDATA", name: "Airtime", description: "Airtime", country_code: "NG",
         }] } };
       }
-      if (request.method === "GET" && request.path === "/v3/bills/AIRTIME/billers") {
+      if (request.method === "GET" && request.path === "/v3/bills/MOBILEDATA/billers") {
         return { status: 200, body: { status: "success", data: [{
-          biller_code: "BIL102", name: "MTN Airtime",
+          biller_code: "BIL102", name: "MTN Data Bundle",
         }] } };
       }
       if (request.method === "GET" && request.path === "/v3/billers/BIL102/items") {
         return { status: 200, body: { status: "success", data: [{
-          biller_code: "BIL102", item_code: "AT102", name: "MTN Airtime",
+          biller_code: "BIL102", item_code: "AT102", name: "MTN Data Bundle",
           amount: "0", currency: "NGN", label_name: "Phone",
         }] } };
       }
@@ -353,7 +353,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -422,7 +422,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -485,7 +485,7 @@ describe("billing checkout", () => {
     });
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -523,7 +523,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -567,7 +567,7 @@ describe("billing checkout", () => {
     });
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -633,7 +633,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -734,7 +734,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -839,7 +839,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -906,7 +906,7 @@ describe("billing checkout", () => {
 
     const quoted = await service.createQuote({
       authorizationHeader: "Bearer session",
-      categoryCode: "AIRTIME",
+      categoryCode: "MOBILEDATA",
       billerCode: "BIL102",
       itemCode: "AT102",
       customerId: "+2348012345678",
@@ -937,7 +937,7 @@ describe("billing service qualification policy", () => {
   ] as const;
 
   for (const categoryCode of categoryCodes) {
-    it(`validates provider customer identity for ${categoryCode}`, async () => {
+    it(`rejects discontinued provider category ${categoryCode}`, async () => {
       const owner = identity();
       const quotes = new MemoryQuotes();
       let validationCalls = 0;
@@ -987,8 +987,8 @@ describe("billing service qualification policy", () => {
         itemCode: "ITEM900",
         customerId: "CUSTOMER-900",
         amount: "100",
-      })).resolves.toMatchObject({ quote: { categoryCode, state: "quoted" } });
-      expect(validationCalls).toBe(1);
+      })).rejects.toThrow("financial.billing.data_only");
+      expect(validationCalls).toBe(0);
     });
   }
 
@@ -1032,14 +1032,21 @@ describe("billing service qualification policy", () => {
         actionSecret: "a".repeat(48),
         redirectUrl: "https://app.masanawa.com/billing/return",
       });
-      await expect(service.createQuote({
+      const requestQuote = () => service.createQuote({
         authorizationHeader: "Bearer session",
         categoryCode,
         billerCode: "BIL901",
         itemCode: "ITEM901",
         customerId: "+2348012345678",
         amount: "100",
-      })).resolves.toMatchObject({ quote: { categoryCode, state: "quoted" } });
+      });
+      if (categoryCode === "MOBILEDATA") {
+        await expect(requestQuote()).resolves.toMatchObject({
+          quote: { categoryCode, state: "quoted" },
+        });
+      } else {
+        await expect(requestQuote()).rejects.toThrow("financial.billing.data_only");
+      }
       expect(validationCalls).toBe(0);
     });
   }
