@@ -40,8 +40,8 @@ KEYS = [
     ("asha", "Madam Asha Verma"),
     ("mei", "Prof. Mei Lin"),
 ]
-N_PARTS = 6
-SIZE = 128
+N_PARTS = 1
+SIZE = 96
 
 def main() -> None:
     parts = [ROOT / f"source-atlas.part{i:02d}.txt" for i in range(N_PARTS)]
@@ -60,7 +60,7 @@ def main() -> None:
     manifest = {
         "schemaVersion": 1,
         "kind": "fictional-ai-portraits",
-        "notes": "AI-generated fictional personas; images are not photographs of named real professionals. 128px app thumbnails; use original 384px asset archive for high-resolution screens.",
+        "notes": "AI-generated fictional personas; images are not photographs of named real professionals. 96px app thumbnails; use original 384px asset archive for high-resolution screens.",
         "portraits": [
             {"key": key, "displayName": name,
              "asset": f"assets/masana/portraits/{key}.webp"}
