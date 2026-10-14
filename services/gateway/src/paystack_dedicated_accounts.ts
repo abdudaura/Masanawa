@@ -84,7 +84,7 @@ export class PaystackDedicatedAccounts {
     if (!response.ok) throw new Error("paystack.http_" + response.status);
     const body = object(await response.json() as unknown);
     if (body.status !== true) throw new Error("paystack.provider_denied");
-    return object(body.data);
+    return body.data === undefined || body.data === null ? {} : object(body.data);
   }
 
   /** Requires express recorded customer consent, never runs on app sign-in. */
