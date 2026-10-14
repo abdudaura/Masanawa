@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'room_discussion_api.dart';
 
-const _blue=Color(0xFF1E63D6);
 String roomDiscussionError(Object e){
  if(e is DioException){
   if(e.response?.statusCode==410)return 'Discussion is not available yet.';
@@ -115,7 +114,7 @@ class _RoomDiscussionScreenState extends State<RoomDiscussionScreen>{
    child:Row(children:[
     Expanded(child:TextField(controller:input,maxLength:2000,maxLines:2,
      decoration:const InputDecoration(labelText:'Write a moderated reply',border:OutlineInputBorder()))),
-    IconButton(icon:const Icon(Icons.send,color:_blue),tooltip:'Send reply for review',
+    IconButton(icon:Icon(Icons.send,color:Theme.of(context).colorScheme.primary),tooltip:'Send reply for review',
      onPressed:sending?null:()=>send()),
    ]))),
  ]);
