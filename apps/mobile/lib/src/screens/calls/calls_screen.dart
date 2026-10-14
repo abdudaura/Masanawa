@@ -29,7 +29,7 @@ class CallsScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final u = context.masanawa;
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: masanawaMainHeader(
         context,
         actions: [
