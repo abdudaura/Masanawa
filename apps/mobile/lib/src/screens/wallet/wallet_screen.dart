@@ -252,10 +252,10 @@ class _Balances extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Spendable Credits', style: TextStyle(color: u.textMuted)),
+          Text('Available NGN', style: TextStyle(color: u.textMuted)),
           const SizedBox(height: 4),
           Text(
-            '${view.spendableCredits} Cr',
+            view.ngnBalanceLabel,
             style: TextStyle(
               color: u.textPrimary,
               fontSize: 24,
@@ -263,10 +263,16 @@ class _Balances extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          Text('Credits', style: TextStyle(color: u.textMuted, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 24,
             runSpacing: 12,
             children: [
+              _SmallBalance(
+                label: 'Spendable',
+                value: '${view.spendableCredits} Cr',
+              ),
               _SmallBalance(
                 label: 'Pending',
                 value: '${view.pendingEarningsCredits} Cr',
