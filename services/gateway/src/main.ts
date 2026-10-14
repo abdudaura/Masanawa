@@ -845,6 +845,14 @@ export async function startGatewayService(
       apiKey: alphaGeminiApiKey,
       model: "gemini-3.8-flash-tts",
       voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Bodi",
+      // Alpha runtime must use the same individual, catalog-verified voice
+      // IDs as production. The previous early initialization skipped resolver.
+      resolveVoice: async (displayName) => {
+        const assigned = (await loadMasanaVoiceAssignments(alphaGeminiApiKey))
+          .get(displayName);
+        if (!assigned) throw new Error("google.voice_profile_missing");
+        return assigned;
+      },
     });
     liveVoiceTokens = createGeminiLiveTokenService({
       apiKey: alphaGeminiApiKey,
