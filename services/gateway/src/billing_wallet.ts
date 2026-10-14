@@ -302,7 +302,7 @@ export function createBillingWalletService(input: Readonly<{
       quoteId: rawQuoteId as BillingQuote["quoteId"],
     });
     if (!quote) throw new Error("financial.billing.quote_not_found");
-    requireDataBundleCategory(quote.categoryCode);
+    requireDataBundleCategory(quote.categoryCode ?? "");
     if (quote.revision !== revision) throw new Error("financial.billing.quote_revision_conflict");
     if (!quote.confirmedAt) {
       quote = await input.quotes.confirmQuote({
@@ -340,7 +340,7 @@ export function createBillingWalletService(input: Readonly<{
     // reserved operation can reconcile against its original authorization.
     // Recover previously reserved legacy purchases, never dispatch a newly
     // confirmed non-data service after the data-only launch cutover.
-    if (quote.state === "confirmed" && !isDataBundleCategory(quote.categoryCode)) {
+    if (quote.state === "confirmed" && !isDataBundleCategory(quote.categoryCode ?? "")) {
       return false;
     }
     if (quote.state === "confirmed" &&
