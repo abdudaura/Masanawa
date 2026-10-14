@@ -435,64 +435,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   // ---- Attachments ---------------------------------------------------------
 
-  void _openAttachSheet() {
-    FocusScope.of(context).unfocus();
-    final u = context.masanawa;
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-            child: Wrap(
-              spacing: 18,
-              runSpacing: 12,
-              alignment: WrapAlignment.center,
-              children: [
-                // Token roles: brand → doc, verified → gallery, warning → camera.
-                _AttachOption(
-                  icon: Icons.insert_drive_file,
-                  color: u.success,
-                  label: 'Document',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickDocument();
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.photo,
-                  color: u.brand,
-                  label: 'Gallery',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickMultipleImages();
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.camera_alt,
-                  color: u.warning,
-                  label: 'Camera',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickImage(ImageSource.camera);
-                  },
-                ),
-                _AttachOption(
-                  icon: Icons.videocam_outlined,
-                  color: u.brandStrong,
-                  label: 'Video',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _pickVideo();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void _chooseAttachment(String choice) {
+    // The menu is anchored beside the composer and does not obscure chat.
+    switch (choice) {
+      case 'document':
+        unawaited(_pickDocument());
+      case 'gallery':
+        unawaited(_pickMultipleImages());
+      case 'camera':
+        unawaited(_pickImage(ImageSource.camera));
+      case 'video':
+        unawaited(_pickVideo());
+    }
   }
 
   Future<void> _pickDocument() async {
@@ -1109,7 +1063,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   await _activeVoiceBubble?._pauseFromAnotherBubble();
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
-                onAttach: _openAttachSheet,
+                onAttach: _chooseAttachment,
                 onMic: updateRequired
                     ? () {}
                     : () => unawaited(_openVoiceNoteComposer()),
@@ -2244,44 +2198,6 @@ class _CallControl extends StatelessWidget {
   }
 }
 
-class _AttachOption extends StatelessWidget {
-  const _AttachOption({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              child: Icon(icon, color: Colors.white, size: 24),
-            ),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(color: u.textPrimary, fontSize: 12)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _InlineVoicePanel extends StatelessWidget {
   const _InlineVoicePanel({
@@ -2426,7 +2342,7 @@ class _Composer extends StatelessWidget {
   final bool sending;
   final VoidCallback onSend;
   final VoidCallback onStop;
-  final VoidCallback onAttach;
+  final ValueChanged<String> onAttach;
   final VoidCallback onMic;
   final VoidCallback onMicHoldStart;
   final ValueChanged<Offset> onMicHoldMove;
@@ -2478,16 +2394,35 @@ class _Composer extends StatelessWidget {
                         ),
                       ),
                     ),
-                    _ComposerIcon(
-                      tooltip: 'Attach',
-                      icon: Icons.attach_file,
-                      onPressed: onAttach,
-                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(width: 6),
+            SizedBox(
+              width: 42,
+              height: 48,
+              child: PopupMenuButton<String>(
+                tooltip: 'Attach',
+                padding: EdgeInsets.zero,
+                icon: Icon(Icons.attach_file, size: 21, color: u.textMuted),
+                onSelected: onAttach,
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'document',
+                    child: ListTile(dense: true, leading: Icon(Icons.description_outlined),
+                      title: Text('Document'))),
+                  PopupMenuItem(value: 'gallery',
+                    child: ListTile(dense: true, leading: Icon(Icons.photo_outlined),
+                      title: Text('Gallery'))),
+                  PopupMenuItem(value: 'camera',
+                    child: ListTile(dense: true, leading: Icon(Icons.camera_alt_outlined),
+                      title: Text('Camera'))),
+                  PopupMenuItem(value: 'video',
+                    child: ListTile(dense: true, leading: Icon(Icons.videocam_outlined),
+                      title: Text('Video'))),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
             Semantics(
               button: true,
               label: hasText ? 'Send message' : 'Record voice note',
