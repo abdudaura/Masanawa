@@ -9,18 +9,22 @@ import '../../theme/masanawa_theme.dart';
 
 /// WhatsApp-style phone input with automatic country detection: as the user
 /// types an international number (`+233 ...`), the flag + dial code + country
-/// name update live. Bare national numbers fall back to Nigeria (+234).
+/// name update live. National numbers use the country selected by the user.
 class PhoneField extends StatefulWidget {
   const PhoneField({
     super.key,
     required this.controller,
     this.autofocus = false,
     this.onCountryChanged,
+    this.enabled = true,
+    this.initialCountry = kDefaultCountry,
   });
 
   final TextEditingController controller;
   final bool autofocus;
   final ValueChanged<PhoneCountry>? onCountryChanged;
+  final bool enabled;
+  final PhoneCountry initialCountry;
 
   @override
   State<PhoneField> createState() => _PhoneFieldState();
@@ -32,15 +36,59 @@ class _PhoneFieldState extends State<PhoneField> {
   @override
   void initState() {
     super.initState();
-    _country = detectCountry(widget.controller.text);
+    final raw = widget.controller.text.trim();
+    _country = raw.startsWith('+') || raw.startsWith('00')
+        ? detectCountry(raw)
+        : widget.initialCountry;
+    widget.controller.addListener(_onControllerChanged);
   }
 
+  @override
+  void didUpdateWidget(PhoneField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+      _onControllerChanged();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() => _onChanged(widget.controller.text);
+
   void _onChanged(String value) {
+    final trimmed = value.trim();
+    if (!trimmed.startsWith('+') && !trimmed.startsWith('00')) return;
     final detected = detectCountry(value);
     if (detected.iso != _country.iso ||
         detected.dialCode != _country.dialCode) {
       setState(() => _country = detected);
       widget.onCountryChanged?.call(detected);
+    }
+  }
+
+  void _selectCountry(PhoneCountry country) {
+    final raw = widget.controller.text.trim();
+    final previous = _country;
+    setState(() => _country = country);
+    widget.onCountryChanged?.call(country);
+    if ((raw.startsWith('+') || raw.startsWith('00')) &&
+        previous.dialCode.isNotEmpty) {
+      final international = normalizeE164(raw);
+      final prefix = '+${previous.dialCode}';
+      final national = international.startsWith(prefix)
+          ? international.substring(prefix.length)
+          : '';
+      final replacement = '+${country.dialCode}$national';
+      widget.controller.value = TextEditingValue(
+        text: replacement,
+        selection: TextSelection.collapsed(offset: replacement.length),
+      );
     }
   }
 
@@ -53,6 +101,7 @@ class _PhoneFieldState extends State<PhoneField> {
       children: [
         TextField(
           controller: widget.controller,
+          enabled: widget.enabled,
           autofocus: widget.autofocus,
           keyboardType: TextInputType.phone,
           inputFormatters: [
@@ -65,24 +114,41 @@ class _PhoneFieldState extends State<PhoneField> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
           decoration: InputDecoration(
-            prefixIcon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(width: 12),
-                Text(_country.flag, style: const TextStyle(fontSize: 22)),
-                const SizedBox(width: 6),
-                Text(
-                  _country.displayCode.isEmpty ? '–––' : _country.displayCode,
-                  style: TextStyle(
-                    fontSize: MasanawaTokens.fontSize['md'],
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
+            prefixIcon: PopupMenuButton<PhoneCountry>(
+              key: const Key('phone-country-picker'),
+              enabled: widget.enabled,
+              tooltip: l10n.countryDialCode(_country.displayCode),
+              onSelected: _selectCountry,
+              itemBuilder: (_) => [
+                for (final country in kPhoneCountries)
+                  PopupMenuItem(
+                    key: Key('phone-country-${country.iso}'),
+                    value: country,
+                    child: Text(
+                      '${country.flag} ${country.name} ${country.displayCode}',
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
               ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(width: 12),
+                  Text(_country.flag, style: const TextStyle(fontSize: 22)),
+                  const SizedBox(width: 6),
+                  Text(
+                    _country.displayCode.isEmpty ? '–––' : _country.displayCode,
+                    style: TextStyle(
+                      fontSize: MasanawaTokens.fontSize['md'],
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_drop_down, size: 20),
+                ],
+              ),
             ),
-            hintText: '+234 801 234 5678',
+            hintText: '${_country.displayCode} …',
             hintStyle: TextStyle(color: u.textMuted),
             filled: true,
             fillColor: u.surfaceCard,

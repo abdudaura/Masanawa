@@ -333,8 +333,8 @@ class SessionController extends Notifier<SessionState> {
   }
 
   /// Profile step shared by both channels: OTP sign-ups verify their code,
-  /// password sign-ups create the account. Email sign-ups also supply the
-  /// phone number here, so every account leaves with phone + name.
+  /// password sign-ups create the account. OTP completion must keep the
+  /// original verified identifier; a different phone/email is not proof.
   Future<void> submitProfile({
     required String name,
     String? phone,
@@ -359,9 +359,9 @@ class SessionController extends Notifier<SessionState> {
       if (current is SessionNameRequired) {
         await verifyOtp(
           code ?? current.code,
-          phone: current.channel == OtpChannel.sms ? current.identifier : phone,
+          phone: current.channel == OtpChannel.sms ? current.identifier : null,
           email:
-              current.channel == OtpChannel.email ? current.identifier : email,
+              current.channel == OtpChannel.email ? current.identifier : null,
           name: name,
         );
         return;

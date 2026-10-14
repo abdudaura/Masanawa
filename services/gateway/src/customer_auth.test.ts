@@ -569,8 +569,12 @@ describe("customer authentication", () => {
     expect(rendered.text).toContain("123456");
     expect(rendered.html).toContain("Masanawa");
     expect(rendered.html).toContain("123456");
-    expect(rendered.html).toContain("#0121D2");
-    expect(rendered.html).toContain("#1DA4FD");
+    expect(rendered.html).toContain("#075E54");
+    expect(rendered.html).toContain("#25D366");
+    expect(rendered.html).not.toMatch(/#0121D2|#1DA4FD|#0A6FFA/u);
+    expect(rendered.html).toContain('lang="en"');
+    expect(rendered.html).toContain("monospace");
+    expect(rendered.html).not.toContain("min-width:260px");
     expect(rendered.html).toContain("Security note");
 
     let payload: Record<string, unknown> | null = null;

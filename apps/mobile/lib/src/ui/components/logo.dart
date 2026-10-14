@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../theme/masanawa_theme.dart';
 
-/// The approved Masanawa agent-language mark.
-///
-/// The artwork itself is the source of truth: a blue conversation bubble
-/// wrapped by a fluid agent ribbon. Do not redraw it as a lettermark, map pin,
-/// or location glyph.
+/// The Masanawa conversation mark, shared with the native launcher.
+/// Keep the packaged artwork as the source of truth for the brand.
 class MasanawaMark extends StatelessWidget {
   const MasanawaMark({
     super.key,

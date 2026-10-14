@@ -80,11 +80,12 @@ Widget _app(
   LocalePreferenceController preference,
   SessionState session, {
   required double textScale,
+  ApiClient? api,
 }) =>
     ProviderScope(
       overrides: [
         sessionProvider.overrideWith(() => _FixedSession(session)),
-        apiClientProvider.overrideWithValue(_TestAuthClient()),
+        apiClientProvider.overrideWithValue(api ?? _TestAuthClient()),
       ],
       child: ListenableBuilder(
         listenable: preference,
@@ -106,6 +107,18 @@ Widget _app(
         ),
       ),
     );
+
+class _PhoneAndEmailClient extends _TestAuthClient {
+  @override
+  Future<List<OtpChannel>> authOtpChannels() async => [OtpChannel.email, OtpChannel.sms];
+}
+
+class _ExpiredOtpClient extends _TestAuthClient {
+  @override
+  Future<AuthTokens> otpVerify(String code, {String? phone, String? email, String? name}) async {
+    throw const ApiException('Invalid or expired code', code: 'OTP_INVALID');
+  }
+}
 
 void main() {
   const routes = ['/phone-login', '/password', '/otp', '/name'];
@@ -158,6 +171,48 @@ void main() {
       }
     }
   }
+
+  testWidgets('phone country stays selected after switching email and phone', (tester) async {
+    final preference = LocalePreferenceController(_MemoryLocaleStore('en'));
+    await preference.load();
+    final router = _router('/phone-login');
+    addTearDown(router.dispose);
+    addTearDown(preference.dispose);
+    await tester.pumpWidget(_app(router, preference, const SessionSignedOut(), textScale: 1, api: _PhoneAndEmailClient()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Phone'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('phone-country-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('phone-country-GH')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '0241234567');
+    await tester.pump();
+    expect(find.text('+233'), findsOneWidget);
+    await tester.tap(find.text('Email'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Phone'));
+    await tester.pumpAndSettle();
+    expect(find.text('+233'), findsOneWidget);
+    expect(find.text('+234'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('expired code during name completion returns to OTP recovery', (tester) async {
+    final preference = LocalePreferenceController(_MemoryLocaleStore('en'));
+    await preference.load();
+    final router = _router('/name');
+    addTearDown(router.dispose);
+    addTearDown(preference.dispose);
+    await tester.pumpWidget(_app(router, preference, _sessionFor('/name'), textScale: 1, api: _ExpiredOtpClient()));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Ada Obi');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.byType(OtpScreen), findsOneWidget);
+    expect(find.byType(NameScreen), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('selected language persists across mounted auth routes',
       (tester) async {

@@ -25,7 +25,7 @@ if (-not [string]::IsNullOrWhiteSpace($Dirty)) {
 }
 $Head = (& git -C $RepoRoot rev-parse HEAD).Trim()
 
-$Gateway = "https://masanawa-gateway-production.up.railway.app"
+$Gateway = "https://masanawa-gateway-production-338f.up.railway.app"
 
 Write-Host "== Masanawa Android build ==" -ForegroundColor Cyan
 Write-Host "Project: $MobileRoot"

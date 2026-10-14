@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -6,10 +7,11 @@ import '../../l10n/app_localizations.dart';
 /// Add translated application resources before claiming an entire locale is
 /// translated. Flutter's stock Material/Cupertino labels are localized now.
 abstract final class MasanawaLocalization {
-  // Hausa needs a dedicated Material/Cupertino delegate; stock Flutter
-  // does not support 'ha'. Keep English UI fallback until integrated.
+  // Hausa app strings are translated; framework dialogs use English until
+  // Flutter provides Hausa Material/Cupertino resources.
   static const supportedLocales = <Locale>[
     Locale('en'),
+    Locale('ha'),
     Locale('ar'),
     Locale('fr'),
     Locale('es'),
@@ -18,6 +20,8 @@ abstract final class MasanawaLocalization {
 
   static const delegates = <LocalizationsDelegate<dynamic>>[
     AppLocalizations.delegate,
+    _HausaMaterialDelegate(),
+    _HausaCupertinoDelegate(),
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,
@@ -44,7 +48,29 @@ abstract final class MasanawaLocalization {
   }
 
   static Locale resolve(Locale? deviceLocale, Iterable<Locale> supported) =>
-      resolvePreferred(
-        deviceLocale == null ? null : [deviceLocale], supported,
-      );
+      resolvePreferred(deviceLocale == null ? null : [deviceLocale], supported);
+}
+
+class _HausaMaterialDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
+  const _HausaMaterialDelegate();
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'ha';
+  @override
+  Future<MaterialLocalizations> load(Locale locale) =>
+      GlobalMaterialLocalizations.delegate.load(const Locale('en'));
+  @override
+  bool shouldReload(_HausaMaterialDelegate old) => false;
+}
+
+class _HausaCupertinoDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
+  const _HausaCupertinoDelegate();
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'ha';
+  @override
+  Future<CupertinoLocalizations> load(Locale locale) =>
+      GlobalCupertinoLocalizations.delegate.load(const Locale('en'));
+  @override
+  bool shouldReload(_HausaCupertinoDelegate old) => false;
 }

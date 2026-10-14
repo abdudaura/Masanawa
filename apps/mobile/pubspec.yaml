@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: ^3.12.2
@@ -123,30 +123,30 @@ flutter:
 
 # Launcher icons — regenerated from the brand mark via:
 #   dart run flutter_launcher_icons
-# Source artwork is the approved Masanawa agent-conversation logo.
+# Source artwork uses the active Masanawa green conversation mark.
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/brand/masanawa_agent_logo.png"
   remove_alpha_ios: true
-  adaptive_icon_background: "#0A6FFA"
+  adaptive_icon_background: "#25D366"
   adaptive_icon_foreground: "assets/brand/masanawa_agent_logo.png"
   min_sdk_android: 21
   web:
     generate: true
     image_path: "assets/brand/masanawa_agent_logo.png"
-    background_color: "#0A6FFA"
-    theme_color: "#0A6FFA"
+    background_color: "#25D366"
+    theme_color: "#25D366"
 
 # Native splash / flash screen — regenerated via:
 #   dart run flutter_native_splash:create
 flutter_native_splash:
-  color: "#0A6FFA"
+  color: "#FFFFFF"
   image: "assets/brand/masanawa_agent_logo.png"
-  color_dark: "#0A6FFA"
+  color_dark: "#FFFFFF"
   image_dark: "assets/brand/masanawa_agent_logo.png"
   android_12:
-    color: "#0A6FFA"
+    color: "#FFFFFF"
     image: "assets/brand/masanawa_agent_logo.png"
-    color_dark: "#0A6FFA"
+    color_dark: "#FFFFFF"
     image_dark: "assets/brand/masanawa_agent_logo.png"

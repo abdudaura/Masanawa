@@ -84,13 +84,34 @@ void main() {
     await tester.tap(find.byKey(const Key('language-picker')));
     await tester.pumpAndSettle();
     expect(find.text('Choose app language'), findsOneWidget);
-    expect(find.byKey(const Key('language-ha-unavailable')), findsOneWidget);
+    expect(find.byKey(const Key('language-ha')), findsOneWidget);
+    expect(tester.widget<ListTile>(find.byKey(const Key('language-ha'))).enabled, isTrue);
 
     await tester.tap(find.byKey(const Key('language-fr')));
     await tester.pumpAndSettle();
     expect(store.value, 'fr');
     expect(controller.localeOverride, const Locale('fr'));
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('Hausa can be selected and restored with translated app labels', (tester) async {
+    final store = _TestStore();
+    final controller = LocalePreferenceController(store);
+    await controller.load();
+    await _mountPicker(tester, controller);
+    await tester.tap(find.byKey(const Key('language-picker')));
+    await tester.pumpAndSettle();
+    final choice = find.byKey(const Key('language-ha'));
+    expect(choice, findsOneWidget);
+    await tester.ensureVisible(choice);
+    await tester.tap(choice);
+    await tester.pumpAndSettle();
+    expect(store.value, 'ha');
+    await _mountPicker(tester, controller, language: const Locale('ha'));
+    expect(find.text('Harshen manhaja'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
   });

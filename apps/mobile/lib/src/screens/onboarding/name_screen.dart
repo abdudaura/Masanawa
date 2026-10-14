@@ -5,12 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../localization/auth_error_localizer.dart';
 import '../../localization/language_picker_button.dart';
-import '../../core/api/models.dart';
-import '../../core/phone/country_codes.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
-import '../../ui/components/phone_field.dart';
 import '../../ui/components/primary_button.dart';
 
 class NameScreen extends ConsumerStatefulWidget {
@@ -22,20 +19,18 @@ class NameScreen extends ConsumerStatefulWidget {
 
 class _NameScreenState extends ConsumerState<NameScreen> {
   final _name = TextEditingController();
-  final _phone = TextEditingController();
   bool _saving = false;
 
   @override
   void dispose() {
     _name.dispose();
-    _phone.dispose();
     super.dispose();
   }
 
   void _snack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submit() async {
@@ -44,22 +39,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       context.go('/chats');
       return;
     }
-    // Email sign-ups arrive without a phone number: every account leaves
-    // this step with phone + name. Password-setup sign-ups already carry
-    // their phone; OTP phone sign-ups carry it in the state.
-    String? phone;
-    if (current is SessionNameRequired &&
-        current.channel == OtpChannel.email) {
-      final e164 = normalizeE164(_phone.text);
-      final digits = e164.replaceAll(RegExp(r'\D'), '');
-      if (digits.length < 7 || digits.length > 15) {
-        _snack(AppLocalizations.of(context).invalidPhoneNumber);
-        return;
-      }
-      phone = e164;
-    }
-    if (current is! SessionNameRequired &&
-        current is! SessionRegisterProfile) {
+    if (current is! SessionNameRequired && current is! SessionRegisterProfile) {
       context.go('/phone-login');
       return;
     }
@@ -71,10 +51,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
     }
     if (_saving) return;
     setState(() => _saving = true);
-    await ref.read(sessionProvider.notifier).submitProfile(
-          name: name,
-          phone: phone,
-        );
+    await ref.read(sessionProvider.notifier).submitProfile(name: name);
     if (mounted) setState(() => _saving = false);
   }
 
@@ -84,17 +61,25 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       if (next is SessionSignedIn) {
         context.go('/chats');
       } else if (next is SessionNameRequired && next.message != null) {
-        _snack(AuthErrorLocalizer.message(
-          AppLocalizations.of(context),
-          code: null,
-          stage: AuthFailureStage.completeProfile,
-        ));
+        _snack(
+          AuthErrorLocalizer.message(
+            AppLocalizations.of(context),
+            code: null,
+            stage: AuthFailureStage.completeProfile,
+          ),
+        );
       } else if (next is SessionError) {
-        _snack(AuthErrorLocalizer.message(
-          AppLocalizations.of(context),
-          code: next.code,
-          stage: AuthFailureStage.completeProfile,
-        ));
+        if (next.code == 'OTP_INVALID' || next.code == 'OTP_LOCKED') {
+          context.go('/otp');
+          return;
+        }
+        _snack(
+          AuthErrorLocalizer.message(
+            AppLocalizations.of(context),
+            code: next.code,
+            stage: AuthFailureStage.completeProfile,
+          ),
+        );
       } else if (next is SessionSignedOut) {
         context.go('/phone-login');
       }
@@ -105,13 +90,10 @@ class _NameScreenState extends ConsumerState<NameScreen> {
     final identifier = session is SessionNameRequired
         ? session.identifier
         : session is SessionRegisterProfile
-            ? session.phone
-            : session is SessionSignedIn
-                ? (session.user.phone ?? session.user.email ?? '')
-                : '';
-    final needsPhone =
-        session is SessionNameRequired && session.channel == OtpChannel.email;
-
+        ? session.phone
+        : session is SessionSignedIn
+        ? (session.user.phone ?? session.user.email ?? '')
+        : '';
     return OnboardingScaffold(
       showLogo: false,
       title: l10n.nameQuestion,
@@ -127,10 +109,6 @@ class _NameScreenState extends ConsumerState<NameScreen> {
             child: LanguagePickerButton(),
           ),
           const SizedBox(height: 8),
-          if (needsPhone) ...[
-            PhoneField(controller: _phone, autofocus: false),
-            const SizedBox(height: 16),
-          ],
           TextField(
             controller: _name,
             autofocus: false,
@@ -149,8 +127,9 @@ class _NameScreenState extends ConsumerState<NameScreen> {
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(MasanawaTokens.radius['md']!),
+                borderRadius: BorderRadius.circular(
+                  MasanawaTokens.radius['md']!,
+                ),
               ),
             ),
           ),
