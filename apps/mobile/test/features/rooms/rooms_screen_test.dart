@@ -22,6 +22,8 @@ void main(){
   expect(find.text('Mathematics'),findsOneWidget);
   expect(find.text('Create Room'),findsNothing);
   await tester.tap(find.text('Mathematics'));await tester.pumpAndSettle();
-  expect(find.text('Join free Room'),findsOneWidget);
+  expect(find.text('Join Room'),findsOneWidget);
+  expect(find.text('Lessons'),findsNothing);
+  expect(find.text('Data Bundles'),findsOneWidget);
  });
 }
