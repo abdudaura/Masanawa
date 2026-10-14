@@ -39,7 +39,8 @@ class _RoomsScreenState extends State<RoomsScreen>{
  bool joined=false,loading=true;Object? error;List<RoomInfo> rows=[];
  int _loadVersion=0;
  Timer? _searchDebounce;
- @override void dispose(){_searchDebounce?.cancel();super.dispose();}
+ final TextEditingController _searchController = TextEditingController();
+ @override void dispose(){_searchDebounce?.cancel();_searchController.dispose();super.dispose();}
  String query='',language='';
  @override void initState(){super.initState();load();}
  Future<void> load()async{
