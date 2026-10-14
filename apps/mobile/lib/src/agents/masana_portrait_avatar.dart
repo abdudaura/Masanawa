@@ -23,7 +23,7 @@ class MasanaPortraitAvatar extends StatelessWidget{
  @override Widget build(BuildContext context){
   final asset=portraitAssetFor(agent.displayName),url=agent.avatarUrl?.trim();
   Widget fallback()=>asset!=null?SvgPicture.asset(asset,width:size,height:size,
-    fit:BoxFit.cover,semanticsLabel:'AI portrait of ${agent.displayName}'):_initial();
+    fit:BoxFit.cover,semanticsLabel:'AI portrait of ${agent.displayName}'):_initial(context);
   // The directory's configured artwork is authoritative. Bundled illustrations
   // remain available when there is no artwork or its download fails.
   final portrait=url==null||url.isEmpty?fallback():
@@ -36,7 +36,7 @@ class MasanaPortraitAvatar extends StatelessWidget{
         errorBuilder:(_,_,_)=>fallback());
   return ClipOval(child:SizedBox(width:size,height:size,child:portrait));
  }
- Widget _initial()=>ColoredBox(color:const Color(0xFF075E54),
+ Widget _initial(BuildContext context)=>ColoredBox(color:Theme.of(context).colorScheme.primary,
     child:Center(child:Text(agent.initial,style:TextStyle(
       color:Colors.white,fontSize:size*.37,fontWeight:FontWeight.bold))));
 }
