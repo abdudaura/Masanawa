@@ -287,8 +287,11 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
 
  void schedulePoll(){
   _poll?.cancel();
-  if(mounted && info?.joined==true && !accessBlocked){
-   _poll=Timer(const Duration(seconds: 8),refreshMessages);
+  // Poll only while an answer is outstanding; stop after it arrives
+  // to avoid needless repeated calls and battery/network drain.
+  if(mounted && info?.joined==true && !accessBlocked &&
+      messages.any((message)=>message.answer==null)){
+   _poll=Timer(const Duration(seconds: 3),refreshMessages);
   }
  }
  Future<void> refreshMessages() async {
