@@ -36,8 +36,8 @@ describe("R05 credit-before-bill crash recovery", () => {
     const createdAt = new Date(Date.now() - 60_000).toISOString();
     const expiresAt = new Date(Date.now() + 120_000).toISOString();
     const seed = createBillingQuote({
-      tenantId, userId, quoteId, categoryCode: "AIRTIME", billerCode: "BIL119",
-      itemCode: "AIRTIME", itemName: "Airtime", customerId: "07010102053",
+      tenantId, userId, quoteId, categoryCode: "MOBILEDATA", billerCode: "BIL119",
+      itemCode: "DATA", itemName: "Data bundle", customerId: "07010102053",
       serviceAmountKobo: 10000, feeAmountKobo: 0,
       createdAt, expiresAt,
     });
@@ -167,6 +167,22 @@ describe("R05 credit-before-bill crash recovery", () => {
     expect(t.creditFunding).not.toHaveBeenCalled();
   });
 
+  it("never starts a discontinued bill on a fresh credit, but reconciles a prior reservation", async () => {
+    const t = setup();
+    const original = await t.readQuote();
+    if (!original) throw new Error("missing fixture");
+    t.setQuote({ ...original, categoryCode: "AIRTIME" });
+    await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toMatchObject({
+      duplicate: true, resumed: false,
+    });
+    expect(t.purchase).not.toHaveBeenCalled();
+    t.setQuote({ ...original, categoryCode: "AIRTIME", state: "reserved" });
+    await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toMatchObject({
+      duplicate: true, resumed: true,
+    });
+    expect(t.purchase).toHaveBeenCalledOnce();
+  });
+
   it("ignores unknown wallet references and rejects invalid signatures", async () => {
     const t = setup();
     t.findFunding.mockResolvedValueOnce(null);
@@ -189,8 +205,8 @@ describe("R05 quote-scoped virtual account replay", () => {
     const createdAt = new Date(Date.now() - 60_000).toISOString();
     const expiresAt = new Date(Date.now() + 120_000).toISOString();
     const original = createBillingQuote({
-      tenantId, userId, quoteId, categoryCode: "AIRTIME",
-      billerCode: "BIL119", itemCode: "AIRTIME", itemName: "Airtime",
+      tenantId, userId, quoteId, categoryCode: "MOBILEDATA",
+      billerCode: "BIL119", itemCode: "DATA", itemName: "Data bundle",
       customerId: "07010102053", serviceAmountKobo: 10000,
       feeAmountKobo: 0, createdAt, expiresAt,
     });
